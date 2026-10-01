@@ -5,12 +5,13 @@
   "private": true,
   "exports": {
     ".": "./src/index.ts",
+    "./seed": "./src/seed/seed.ts",
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "node --env-file-if-exists=../../.env src/migrate.ts",
-    "seed": "node --env-file-if-exists=../../.env src/seed.ts"
+    "seed": "node --env-file-if-exists=../../.env src/seed/seed.ts"
   },
   "dependencies": {
     "@wepush/domain": "workspace:*",

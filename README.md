@@ -31,7 +31,7 @@ packages/
 cp .env.example .env
 pnpm install
 pnpm dev        # postgres up → migrate → api + worker + web
-pnpm db:seed    # optional, in another terminal: demo advertisers, creators, and a Campaign closing in 2 minutes
+pnpm db:seed    # optional, in another terminal: wipes the database and loads the demo data (see below)
 ```
 
 Then open http://localhost:5173. You'll get a role picker; choose (or create) an Advertiser or a Creator to act as. There's no authentication. The API's dev OpenAPI UI is at http://localhost:5173/api/docs.
@@ -67,7 +67,23 @@ All of these live in the root `.env`, and every process validates them at startu
 | `pnpm infra:reset` | Stop it and delete its volume |
 | `pnpm db:migrate` | Apply the committed SQL migrations. This is always an explicit step; the api and worker never migrate on boot |
 | `pnpm db:generate` | Generate a new migration after editing `packages/db/src/schema` |
-| `pnpm db:seed` | Insert demo rows. Idempotent |
+| `pnpm db:seed` | Wipe all marketplace data and load the demo data. Refuses when `NODE_ENV=production` |
+
+### Demo data
+
+`pnpm db:seed` truncates every table, including anything you created in the UI, and reinserts the same hand-written cast in one transaction: 3 Advertisers, 16 Creators, 9 Campaigns and 18 Pending Bids. Deadlines are relative to the moment you seed, so **re-seed right before demoing**. Every Campaign starts Open. The worker closes the three past-due ones on its first tick, so their Winners and Losers come from the real Closing code.
+
+| Act as | What to look at |
+|---|---|
+| Glow Cosmetics | *Summer glow launch* closed with Winners and `over_budget` Losers, plus the nano account @tinyglam.tess winning cheaply at the $10 Fee floor. *Lip tint drop* closes 5 minutes after seeding |
+| Fuel Fitness | *Protein bar taste test* closed, with @coreandcoffee losing `over_budget`. *Shaker bottle giveaway* closes 15 minutes after seeding. *Ambassador programme* is niche: only @plantpowerpri qualifies |
+| Pixel Forge | *Closed beta keys* closed with no Bids, so no Winners |
+| @glowbyana | A big TikTok beauty account that matches several Glow Campaigns |
+| @coreandcoffee | Just under the *Ambassador programme* minimum engagement rate, so it doesn't match |
+| @lagfreeluna / @runwithraf | Engagement far above or below baseline: the Impressions lift clamps at 2× and 0.5× |
+| @wanderwithwen | No Matched Campaigns |
+
+The closing-soon Campaigns only demo well within a few minutes of seeding.
 
 ### Starting apps individually
 
