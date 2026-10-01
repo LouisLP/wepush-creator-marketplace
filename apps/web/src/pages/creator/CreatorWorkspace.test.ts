@@ -236,48 +236,51 @@ describe('placing a Bid', () => {
     const fetch = stubApi(stub)
     const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
-    return { fetch, wrapper, fee: wrapper.get('input[name="fee"]') }
+    const fee = wrapper.get('input[name="fee"]')
+    // The number field commits on blur, like a person tabbing out
+    const typeFee = async (value: string) => {
+      await fee.setValue(value)
+      await fee.trigger('blur')
+    }
+    return { fetch, wrapper, fee, typeFee }
   }
 
   it('shows the quote line and pre-fills the Suggested Fee with a live CPM-vs-Target chip', async () => {
-    const { wrapper, fee } = await mountComposer()
+    const { wrapper, fee, typeFee } = await mountComposer()
 
     expect(wrapper.findAll('.quote > span').map(s => s.text())).toEqual(['7.5K Est. Impressions', 'Suggested $75.00', 'Range $10.00 – $225.00'])
     expect((fee.element as HTMLInputElement).value).toBe('75')
     expect(wrapper.get('.cpm').text()).toContain('Effective CPM $10.00')
     expect(wrapper.get('.cpm .badge').text()).toBe('at target')
 
-    await fee.setValue('60')
+    await typeFee('60')
     expect(wrapper.get('.cpm').text()).toContain('Effective CPM $8.00')
     expect(wrapper.get('.cpm .badge').text()).toBe('20% under target')
     expect(wrapper.get('.cpm .badge').attributes('data-tone')).toBe('success')
 
-    await fee.setValue('150')
+    await typeFee('150')
     expect(wrapper.get('.cpm .badge').text()).toBe('100% over target')
     expect(wrapper.get('.cpm .badge').attributes('data-tone')).toBe('warning')
   })
 
-  it('keeps the bid rules behind a labelled info button', async () => {
+  it('states the bid rules inline', async () => {
     const { wrapper } = await mountComposer()
 
-    const info = wrapper.get('button[aria-label="Bid rules"]')
-    const rules = wrapper.get(`#${info.attributes('aria-describedby')}`)
-    expect(rules.text()).toContain('Bids are final and sealed')
-    expect(rules.classes()).toContain('visually-hidden')
+    expect(wrapper.get('.rules').text()).toBe('Sealed and final: one Bid, no edits')
   })
 
   it('blocks a Fee outside the Fee Range, naming the range', async () => {
-    const { wrapper, fee } = await mountComposer()
+    const { wrapper, typeFee } = await mountComposer()
 
-    await fee.setValue('300')
+    await typeFee('300')
 
     expect(wrapper.get('.field-error').text()).toBe('Fee must be between $10.00 and $225.00.')
     expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
   })
 
   it('confirms before placing, then switches the pane to Pending', async () => {
-    const { fetch, wrapper, fee } = await mountComposer()
-    await fee.setValue('60')
+    const { fetch, wrapper, typeFee } = await mountComposer()
+    await typeFee('60')
 
     await wrapper.get('form').trigger('submit')
     expect(wrapper.text()).toContain('Final, can’t be changed. Place your Bid at $60.00?')

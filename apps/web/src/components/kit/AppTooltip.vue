@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
+import { TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 
 // Brings its own TooltipProvider, so it works wherever it's mounted
 defineProps<{ content: string }>()
 </script>
 
 <template>
-  <TooltipProvider>
+  <TooltipProvider :delay-duration="300">
     <TooltipRoot>
       <TooltipTrigger as-child>
         <slot />
       </TooltipTrigger>
       <TooltipPortal>
-        <TooltipContent class="tooltip" :side-offset="6">
+        <TooltipContent class="tooltip" :side-offset="6" :collision-padding="8">
           {{ content }}
-          <TooltipArrow class="arrow" />
         </TooltipContent>
       </TooltipPortal>
     </TooltipRoot>
@@ -22,19 +21,21 @@ defineProps<{ content: string }>()
 </template>
 
 <style scoped>
+/* max-content + a cap: Reka's popper wrapper is min-width: max-content, so cap the box itself */
 .tooltip {
   z-index: var(--z-toast);
-  max-inline-size: 18rem;
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(16rem, 100vw - 2rem);
   padding: var(--space-2xs) var(--space-xs);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg-inverse);
-  color: var(--color-text-on-inverse);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-surface-raised);
+  color: var(--color-text-primary);
   font-size: var(--font-size-xs);
+  line-height: var(--line-height-snug);
+  text-wrap: pretty;
   box-shadow: var(--shadow-md);
-}
-
-.arrow {
-  fill: var(--color-bg-inverse);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -46,6 +47,7 @@ defineProps<{ content: string }>()
 @keyframes fade-in {
   from {
     opacity: 0;
+    scale: 0.97;
   }
 }
 </style>

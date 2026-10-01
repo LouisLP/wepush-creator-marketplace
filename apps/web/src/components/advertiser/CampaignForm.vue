@@ -3,8 +3,14 @@ import type { AdvertiserCampaignSummary, CampaignPreviewBody, Category, Platform
 import { CAMPAIGN_LIMITS, CategorySchema, createCampaign, CreateCampaignBodySchema, PLATFORM_BENCHMARKS, PlatformSchema } from '@wepush/contracts'
 import { computed, reactive, ref } from 'vue'
 import { ApiError, call, fieldErrors, formErrorFor } from '@/api'
+import AppCheckboxGroup from '@/components/kit/AppCheckboxGroup.vue'
+import AppField from '@/components/kit/AppField.vue'
+import AppNumberField from '@/components/kit/AppNumberField.vue'
+import AppSelect from '@/components/kit/AppSelect.vue'
+import AppTextarea from '@/components/kit/AppTextarea.vue'
+import AppTextInput from '@/components/kit/AppTextInput.vue'
 import { useCampaignPreview } from '@/composables/useCampaignPreview.ts'
-import { formatCents, formatPlatform } from '@/lib/format.ts'
+import { formatCategory, formatCents, formatPlatform } from '@/lib/format.ts'
 import CampaignPreviewCard from './CampaignPreviewCard.vue'
 
 const emit = defineEmits<{ created: [campaign: AdvertiserCampaignSummary] }>()
@@ -21,7 +27,8 @@ function toIso(local: string) {
   return Number.isNaN(date.getTime()) ? '' : date.toISOString()
 }
 
-const toCents = (dollars: number | '') => (dollars === '' ? Number.NaN : Math.round(dollars * 100))
+const toCents = (dollars: number | undefined) => (dollars === undefined ? Number.NaN : Math.round(dollars * 100))
+const money = { minimumFractionDigits: 0, maximumFractionDigits: 2 }
 
 const now = ref(Date.now())
 const deadlineBounds = computed(() => ({
@@ -34,12 +41,14 @@ const form = reactive({
   brief: '',
   platform: 'tiktok' as Platform,
   categories: [] as Category[],
-  minFollowers: 10_000 as number | '',
-  minEngagementPercent: '' as number | '',
-  budget: 1_000 as number | '',
-  targetCpm: 10 as number | '',
+  minFollowers: 10_000 as number | undefined,
+  minEngagementPercent: undefined as number | undefined,
+  budget: 1_000 as number | undefined,
+  targetCpm: 10 as number | undefined,
   deadline: toLocalInput(new Date(Math.ceil((now.value + 72 * HOUR_MS) / HOUR_MS) * HOUR_MS)),
 })
+const platforms = PlatformSchema.options.map(p => ({ value: p, label: formatPlatform(p) }))
+const categories = CategorySchema.options.map(c => ({ value: c, label: formatCategory(c) }))
 const errors = ref<Record<string, string>>({})
 const formError = ref<string>()
 const submitting = ref(false)
@@ -47,8 +56,8 @@ const submitting = ref(false)
 const terms = computed<CampaignPreviewBody>(() => ({
   platform: form.platform,
   categories: [...form.categories],
-  minFollowers: form.minFollowers === '' ? Number.NaN : form.minFollowers,
-  minEngagementRate: form.minEngagementPercent === '' ? null : form.minEngagementPercent / 100,
+  minFollowers: form.minFollowers ?? Number.NaN,
+  minEngagementRate: form.minEngagementPercent === undefined ? null : form.minEngagementPercent / 100,
   budgetCents: toCents(form.budget),
   targetCpmCents: toCents(form.targetCpm),
 }))
@@ -63,6 +72,7 @@ const cpmHint = computed(() => {
     return 'Above the typical range: you’ll likely overpay for views.'
   return 'Lower means cheaper views, but Creators rank you lower.'
 })
+const cpmFieldHint = computed(() => `Typical ${formatPlatform(form.platform)} range ${formatCents(cpmRange.value.low)}–${formatCents(cpmRange.value.high)}. ${cpmHint.value}`)
 
 async function submit() {
   const parsed = CreateCampaignBodySchema.safeParse({
@@ -98,16 +108,12 @@ async function submit() {
     <div class="fields">
       <fieldset>
         <legend>What</legend>
-        <label class="field">
-          <span>Title</span>
-          <input v-model="form.title" name="title" :maxlength="CAMPAIGN_LIMITS.titleMaxLength" required>
-          <small v-if="errors.title" class="field-error">{{ errors.title }}</small>
-        </label>
-        <label class="field">
-          <span>Brief (shown to Creators)</span>
-          <textarea v-model="form.brief" name="brief" rows="5" :maxlength="CAMPAIGN_LIMITS.briefMaxLength" required />
-          <small v-if="errors.brief" class="field-error">{{ errors.brief }}</small>
-        </label>
+        <AppField v-slot="f" label="Title" :error="errors.title">
+          <AppTextInput :id="f.id" v-model="form.title" name="title" :maxlength="CAMPAIGN_LIMITS.titleMaxLength" required :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+        </AppField>
+        <AppField v-slot="f" label="Brief (shown to Creators)" :error="errors.brief">
+          <AppTextarea :id="f.id" v-model="form.brief" name="brief" rows="5" :maxlength="CAMPAIGN_LIMITS.briefMaxLength" required :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+        </AppField>
       </fieldset>
 
       <fieldset>
@@ -115,57 +121,35 @@ async function submit() {
         <p class="muted hint">
           Only Creators meeting all of these see the Campaign.
         </p>
-        <label class="field">
-          <span>Platform</span>
-          <select v-model="form.platform" name="platform">
-            <option v-for="p in PlatformSchema.options" :key="p" :value="p">{{ formatPlatform(p) }}</option>
-          </select>
-        </label>
-        <fieldset class="field categories">
-          <legend>Categories</legend>
-          <div class="chips">
-            <label v-for="c in CategorySchema.options" :key="c">
-              <input v-model="form.categories" type="checkbox" name="categories" :value="c"> {{ c }}
-            </label>
-          </div>
-          <small v-if="errors.categories" class="field-error">{{ errors.categories }}</small>
-        </fieldset>
+        <AppField v-slot="f" label="Platform">
+          <AppSelect :id="f.id" v-model="form.platform" :options="platforms" />
+        </AppField>
+        <AppField label="Categories" as="fieldset" :error="errors.categories">
+          <AppCheckboxGroup v-model="form.categories" :options="categories" />
+        </AppField>
         <div class="row">
-          <label class="field">
-            <span>Min followers</span>
-            <input v-model.number="form.minFollowers" name="minFollowers" type="number" min="0" :max="CAMPAIGN_LIMITS.minFollowersMax" step="1">
-            <small v-if="errors.minFollowers" class="field-error">{{ errors.minFollowers }}</small>
-          </label>
-          <label class="field">
-            <span>Min engagement rate (%, optional)</span>
-            <input v-model.number="form.minEngagementPercent" name="minEngagementRate" type="number" min="0" max="100" step="0.1">
-            <small v-if="errors.minEngagementRate" class="field-error">{{ errors.minEngagementRate }}</small>
-          </label>
+          <AppField v-slot="f" label="Min followers" :error="errors.minFollowers">
+            <AppNumberField :id="f.id" v-model="form.minFollowers" name="minFollowers" :min="0" :max="CAMPAIGN_LIMITS.minFollowersMax" :step="1000" :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+          </AppField>
+          <AppField v-slot="f" label="Min engagement rate (%, optional)" :error="errors.minEngagementRate">
+            <AppNumberField :id="f.id" v-model="form.minEngagementPercent" name="minEngagementRate" :min="0" :max="100" :step="0.1" :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+          </AppField>
         </div>
       </fieldset>
 
       <fieldset>
         <legend>Money & time</legend>
         <div class="row">
-          <label class="field">
-            <span>Budget (USD)</span>
-            <input v-model.number="form.budget" name="budget" type="number" :min="CAMPAIGN_LIMITS.budgetCents.min / 100" step="1">
-            <small v-if="errors.budgetCents" class="field-error">{{ errors.budgetCents }}</small>
-          </label>
-          <label class="field">
-            <span>Target CPM (USD)</span>
-            <input v-model.number="form.targetCpm" name="targetCpm" type="number" :min="CAMPAIGN_LIMITS.targetCpmCents.min / 100" step="0.5" aria-describedby="cpm-hint">
-            <small v-if="errors.targetCpmCents" class="field-error">{{ errors.targetCpmCents }}</small>
-            <small id="cpm-hint" class="muted">
-              Typical {{ formatPlatform(form.platform) }} range {{ formatCents(cpmRange.low) }}–{{ formatCents(cpmRange.high) }}. {{ cpmHint }}
-            </small>
-          </label>
+          <AppField v-slot="f" label="Budget (USD)" :error="errors.budgetCents">
+            <AppNumberField :id="f.id" v-model="form.budget" name="budget" :min="0" :step="100" :format-options="money" :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+          </AppField>
+          <AppField v-slot="f" label="Target CPM (USD)" :error="errors.targetCpmCents" :hint="cpmFieldHint">
+            <AppNumberField :id="f.id" v-model="form.targetCpm" name="targetCpm" :min="0" :step="0.5" :format-options="money" :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+          </AppField>
         </div>
-        <label class="field">
-          <span>Bidding Deadline</span>
-          <input v-model="form.deadline" name="biddingDeadline" type="datetime-local" :min="deadlineBounds.min" :max="deadlineBounds.max" @focus="now = Date.now()">
-          <small v-if="errors.biddingDeadline" class="field-error">{{ errors.biddingDeadline }}</small>
-        </label>
+        <AppField v-slot="f" label="Bidding Deadline" :error="errors.biddingDeadline">
+          <AppTextInput :id="f.id" v-model="form.deadline" name="biddingDeadline" type="datetime-local" :min="deadlineBounds.min" :max="deadlineBounds.max" :aria-describedby="f.describedby" :aria-invalid="f.invalid" @focus="now = Date.now()" />
+        </AppField>
       </fieldset>
     </div>
 
@@ -197,51 +181,23 @@ async function submit() {
   gap: var(--space-md);
 }
 
-fieldset {
+.fields > fieldset {
   display: grid;
-  gap: var(--space-sm);
-  padding: var(--space-md);
+  gap: var(--space-md);
+  padding: var(--space-lg);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-lg);
 }
 
-legend {
+.fields > fieldset > legend {
   padding-inline: var(--space-2xs);
   font-weight: var(--font-weight-semibold);
-}
-
-.categories {
-  padding: 0;
-  border: none;
-}
-
-.categories legend {
-  padding: 0;
-  margin-block-end: var(--space-2xs);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: inherit;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs) var(--space-md);
 }
 
 .row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: var(--space-sm);
-}
-
-textarea {
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-md);
-  background-color: var(--color-bg-canvas);
-  color: var(--color-text-primary);
-  resize: vertical;
+  gap: var(--space-md);
 }
 
 .hint,

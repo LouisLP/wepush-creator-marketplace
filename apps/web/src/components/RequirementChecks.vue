@@ -2,7 +2,6 @@
 import type { RequirementCheck } from '@wepush/contracts'
 import IconCheck from '~icons/lucide/check'
 import IconX from '~icons/lucide/x'
-import AppTooltip from '@/components/kit/AppTooltip.vue'
 import { formatCount, formatPercent, formatPlatform } from '@/lib/format.ts'
 
 defineProps<{ checks: RequirementCheck[] }>()
@@ -22,15 +21,13 @@ function describe(c: RequirementCheck): { need: string, you: string } {
 
 <template>
   <ul class="checks">
-    <AppTooltip v-for="c in checks" :key="c.requirement" :content="`You: ${describe(c).you}`">
-      <li :class="c.passed ? 'pass' : 'miss'">
-        <IconCheck v-if="c.passed" class="mark" aria-hidden="true" />
-        <IconX v-else class="mark" aria-hidden="true" />
-        <span class="visually-hidden">{{ c.passed ? 'Met:' : 'Not met:' }}</span>
-        {{ describe(c).need }}
-        <span class="visually-hidden">(you: {{ describe(c).you }})</span>
-      </li>
-    </AppTooltip>
+    <li v-for="c in checks" :key="c.requirement" :class="c.passed ? 'pass' : 'miss'">
+      <IconCheck v-if="c.passed" class="mark" aria-hidden="true" />
+      <IconX v-else class="mark" aria-hidden="true" />
+      <span class="visually-hidden">{{ c.passed ? 'Met:' : 'Not met:' }}</span>
+      {{ describe(c).need }}
+      <span :class="c.passed ? 'visually-hidden' : 'you'">(you: {{ describe(c).you }})</span>
+    </li>
   </ul>
 </template>
 
@@ -55,6 +52,10 @@ li {
 
 .pass .mark {
   color: var(--color-success-default);
+}
+
+.you {
+  opacity: 0.8;
 }
 
 .miss {

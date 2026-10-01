@@ -1,22 +1,21 @@
 <script setup lang="ts">
 import type { CreatorBid, CreatorCampaign } from '@wepush/contracts'
 import { placeBid } from '@wepush/contracts'
-import { computed, shallowRef, useId } from 'vue'
-import IconInfo from '~icons/lucide/info'
+import { computed, shallowRef, useId, watch } from 'vue'
 import IconLock from '~icons/lucide/lock'
 import { ApiError, call, feeRangeMessage, fieldErrors, messageFor } from '@/api'
-import AppTooltip from '@/components/kit/AppTooltip.vue'
+import AppField from '@/components/kit/AppField.vue'
+import AppNumberField from '@/components/kit/AppNumberField.vue'
+import AppSlider from '@/components/kit/AppSlider.vue'
 import { formatCents, formatCount } from '@/lib/format.ts'
 import CpmVsTargetBadge from './CpmVsTargetBadge.vue'
 
 const props = defineProps<{ campaign: CreatorCampaign }>()
 const emit = defineEmits<{ placed: [bid: CreatorBid], confirming: [boolean] }>()
 
-const RULES = 'Bids are final and sealed: one per Campaign, no edits or withdrawal, and other Creators never see them. Winners are picked automatically at the Bidding Deadline by Score, within Budget.'
-
 const quote = computed(() => props.campaign.feeQuote)
-const dollars = shallowRef<number | string>(quote.value.suggestedFeeCents / 100)
-const feeCents = computed(() => Math.round(Number(dollars.value) * 100))
+const dollars = shallowRef<number | undefined>(quote.value.suggestedFeeCents / 100)
+const feeCents = computed(() => (dollars.value === undefined ? Number.NaN : Math.round(dollars.value * 100)))
 const inRange = computed(() => Number.isFinite(feeCents.value) && feeCents.value >= quote.value.minFeeCents && feeCents.value <= quote.value.maxFeeCents)
 const effectiveCpm = computed(() => Math.round(feeCents.value * 1000 / quote.value.estimatedImpressions))
 
@@ -24,19 +23,19 @@ const confirming = shallowRef(false)
 const submitting = shallowRef(false)
 const serverError = shallowRef<string>()
 const feeError = computed(() => serverError.value ?? (inRange.value ? undefined : feeRangeMessage(quote.value.minFeeCents, quote.value.maxFeeCents)))
-const errorId = useId()
-const rulesId = useId()
+const feedbackId = useId()
+const money = { minimumFractionDigits: 0, maximumFractionDigits: 2 }
 
 function setConfirming(value: boolean) {
   confirming.value = value
   emit('confirming', value)
 }
 
-function onInput() {
+watch(dollars, () => {
   serverError.value = undefined
   if (confirming.value)
     setConfirming(false)
-}
+})
 
 async function submit() {
   submitting.value = true
@@ -62,37 +61,25 @@ async function submit() {
     </p>
 
     <div class="fee">
-      <label class="field">
-        <span>Your Fee (USD)</span>
-        <input
+      <AppField v-slot="f" label="Your Fee (USD)">
+        <AppNumberField
+          :id="f.id"
           v-model="dollars"
           name="fee"
-          type="number"
-          inputmode="decimal"
-          :min="quote.minFeeCents / 100"
-          :max="quote.maxFeeCents / 100"
-          step="0.01"
+          :step="1"
+          :format-options="money"
           required
           :aria-invalid="!!feeError"
-          :aria-describedby="feeError ? errorId : undefined"
-          @input="onInput"
-        >
-      </label>
-      <input
-        v-model.number="dollars"
-        type="range"
-        :min="quote.minFeeCents / 100"
-        :max="quote.maxFeeCents / 100"
-        step="1"
-        aria-label="Fee"
-        @input="onInput"
-      >
+          :aria-describedby="feedbackId"
+        />
+      </AppField>
+      <AppSlider v-model="dollars" label="Fee" :min="quote.minFeeCents / 100" :max="quote.maxFeeCents / 100" :step="1" />
     </div>
 
-    <p v-if="feeError" :id="errorId" class="field-error" role="alert">
+    <p v-if="feeError" :id="feedbackId" class="field-error" role="alert">
       {{ feeError }}
     </p>
-    <p v-else class="cpm">
+    <p v-else :id="feedbackId" class="cpm">
       Effective CPM <strong>{{ formatCents(effectiveCpm) }}</strong>
       <span class="muted">vs Target {{ formatCents(campaign.targetCpmCents) }}</span>
       <CpmVsTargetBadge :cpm-cents="effectiveCpm" :target-cpm-cents="campaign.targetCpmCents" />
@@ -111,12 +98,7 @@ async function submit() {
       <button type="submit" class="btn" :disabled="!inRange">
         Place Bid at {{ inRange ? formatCents(feeCents) : '…' }}
       </button>
-      <AppTooltip :content="RULES">
-        <button type="button" class="rules" aria-label="Bid rules" :aria-describedby="rulesId">
-          <IconInfo aria-hidden="true" />
-        </button>
-      </AppTooltip>
-      <span :id="rulesId" class="visually-hidden">{{ RULES }}</span>
+      <span class="muted rules"><IconLock aria-hidden="true" /> Sealed and final: one Bid, no edits</span>
     </div>
   </form>
 </template>
@@ -152,12 +134,6 @@ async function submit() {
   align-items: end;
 }
 
-.fee input[type="range"] {
-  inline-size: 100%;
-  block-size: 2.5rem;
-  accent-color: var(--color-accent-default);
-}
-
 strong {
   font-variant-numeric: tabular-nums;
 }
@@ -173,24 +149,9 @@ strong {
 }
 
 .rules {
-  display: inline-grid;
-  place-items: center;
-  padding: var(--space-2xs);
-  border: 0;
-  border-radius: var(--radius-full);
-  background-color: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-lg);
-  cursor: help;
-}
-
-.rules:hover {
-  background-color: var(--color-bg-surface-hover);
-  color: var(--color-text-primary);
-}
-
-.rules:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--font-size-sm);
 }
 </style>

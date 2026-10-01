@@ -28,6 +28,18 @@ async function settle() {
   await flushPromises()
 }
 
+async function check(wrapper: ReturnType<typeof mount>, label: string) {
+  const box = wrapper.findAll('[role="checkbox"]').find(b => b.element.parentElement!.textContent!.trim() === label)!
+  await box.trigger('click')
+}
+
+// The number fields commit on blur, like a person tabbing out
+async function typeNumber(wrapper: ReturnType<typeof mount>, name: string, value: number) {
+  const input = wrapper.get(`input[name="${name}"]`)
+  await input.setValue(String(value))
+  await input.trigger('blur')
+}
+
 const callsTo = (url: string) => fetchMock.mock.calls.filter(([u]) => u === url)
 
 describe('campaignForm', () => {
@@ -48,8 +60,8 @@ describe('campaignForm', () => {
     expect(callsTo('/api/advertiser/campaigns/preview')).toHaveLength(0)
     expect(wrapper.text()).toContain('Fix the Requirements')
 
-    await wrapper.find('input[value="food"]').setValue(true)
-    await wrapper.find('input[value="tech"]').setValue(true)
+    await check(wrapper, 'Food')
+    await check(wrapper, 'Tech')
     await settle()
 
     expect(callsTo('/api/advertiser/campaigns/preview')).toHaveLength(1)
@@ -57,7 +69,7 @@ describe('campaignForm', () => {
     expect(wrapper.text()).toContain('$30.00 – $150.00')
     expect(wrapper.text()).toContain('≈ 13 Posts at the median')
 
-    await wrapper.find('input[name="minFollowers"]').setValue(2_000_000)
+    await typeNumber(wrapper, 'minFollowers', 2_000_000)
     await settle()
 
     expect(wrapper.text()).toContain('No Creators match these Requirements')
@@ -66,7 +78,7 @@ describe('campaignForm', () => {
   it('shows client-side errors per field without calling create', async () => {
     const wrapper = mountForm()
 
-    await wrapper.find('input[name="budget"]').setValue(5)
+    await typeNumber(wrapper, 'budget', 5)
     await wrapper.find('form').trigger('submit')
 
     expect(wrapper.text()).toContain('Pick at least one category')
@@ -83,7 +95,7 @@ describe('campaignForm', () => {
     const wrapper = mountForm()
     await wrapper.find('input[name="title"]').setValue('Taco Tuesday')
     await wrapper.find('textarea[name="brief"]').setValue('Film our taco.')
-    await wrapper.find('input[value="food"]').setValue(true)
+    await check(wrapper, 'Food')
 
     await wrapper.find('form').trigger('submit')
     await flushPromises()

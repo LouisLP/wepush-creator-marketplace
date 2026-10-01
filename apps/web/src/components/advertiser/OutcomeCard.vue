@@ -29,7 +29,7 @@ const MIN_LABELLED_SHARE = 4
         <AppBadge variant="outline" :icon="IconHourglass">
           Projected
         </AppBadge>
-        <InfoTip content="Projected from the Bids so far. Closing decides for real after the Bidding Deadline." />
+        <InfoTip content="Based on Bids so far; final at the Bidding Deadline." />
       </template>
       <span v-else class="muted closed-at">Closed {{ formatDateTime(campaign.closedAt!) }}</span>
     </header>
