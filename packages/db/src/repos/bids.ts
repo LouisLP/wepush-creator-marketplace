@@ -27,6 +27,11 @@ export function createBidRepo(exec: DbExecutor) {
       return rows.map(toPendingBid)
     },
 
+    async exists(campaignId: CampaignId, creatorId: CreatorId) {
+      const [row] = await exec.select({ id: bids.id }).from(bids).where(and(eq(bids.campaignId, campaignId), eq(bids.creatorId, creatorId)))
+      return !!row
+    },
+
     async recordOutcomes(outcomes: readonly BidOutcome[]) {
       for (const o of outcomes) {
         const updated = await exec.update(bids)

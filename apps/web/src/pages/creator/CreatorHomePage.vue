@@ -22,6 +22,9 @@ const profile = useRequest(() => call(getCreatorProfile))
       <div><dt>Followers</dt><dd>{{ formatCount(profile.data.value.followers) }}</dd></div>
       <div><dt>Engagement</dt><dd>{{ formatPercent(profile.data.value.engagementRate) }}</dd></div>
     </dl>
+    <p class="muted">
+      Pick a Matched Campaign to review its Brief, Requirements and your Fee Quote.
+    </p>
   </section>
 </template>
 

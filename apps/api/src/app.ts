@@ -7,6 +7,7 @@ import swaggerUi from '@fastify/swagger-ui'
 import Fastify from 'fastify'
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import { advertiserRoutes } from './modules/advertisers/routes.ts'
+import { creatorCampaignRoutes } from './modules/campaigns/creator-routes.ts'
 import { advertiserCampaignRoutes } from './modules/campaigns/routes.ts'
 import { creatorProfileRoutes, creatorRoutes } from './modules/creators/routes.ts'
 import { healthRoutes } from './modules/health/routes.ts'
@@ -65,6 +66,7 @@ export async function buildApp(deps: AppDeps, opts: AppOptions = {}) {
   await app.register(async (creatorScope) => {
     creatorScope.addHook('onRequest', creatorActor(deps))
     await creatorScope.register(creatorProfileRoutes(deps))
+    await creatorScope.register(creatorCampaignRoutes(deps))
   })
 
   return app

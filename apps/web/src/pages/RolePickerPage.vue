@@ -10,6 +10,7 @@ import NewAdvertiserForm from '@/components/NewAdvertiserForm.vue'
 import NewCreatorForm from '@/components/NewCreatorForm.vue'
 import { useRequest } from '@/composables/useRequest.ts'
 import { formatCount, formatPercent } from '@/lib/format.ts'
+import { landingFor } from '@/router'
 import { useIdentityStore } from '@/stores/identity.ts'
 
 const route = useRoute()
@@ -23,7 +24,7 @@ const creating = ref<Role | null>(null)
 
 function actAs(role: Role, who: Identity) {
   identity.set(role, who)
-  void router.push(`/${role}`)
+  void router.push(landingFor(role, route.query.redirect))
 }
 
 const pickAdvertiser = (a: Advertiser) => actAs('advertiser', { id: a.id, name: a.name })
