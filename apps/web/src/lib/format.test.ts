@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { formatTimeLeft, formatVsTarget } from './format.ts'
+import { formatCentsShort, formatTimeLeft, formatVsTarget } from './format.ts'
+
+describe('formatCentsShort', () => {
+  it.each([
+    [15_000, '$150'],
+    [13_050, '$130.50'],
+    [0, '$0'],
+  ])('%i → %s', (cents, expected) => {
+    expect(formatCentsShort(cents)).toBe(expected)
+  })
+})
 
 describe('formatVsTarget', () => {
   it.each([

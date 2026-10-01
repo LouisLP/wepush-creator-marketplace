@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { TooltipArrow, TooltipContent, TooltipPortal, TooltipRoot, TooltipTrigger } from 'reka-ui'
+import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 
+// Brings its own TooltipProvider, so it works wherever it's mounted
 defineProps<{ content: string }>()
 </script>
 
 <template>
-  <TooltipRoot>
-    <TooltipTrigger as-child>
-      <slot />
-    </TooltipTrigger>
-    <TooltipPortal>
-      <TooltipContent class="tooltip" :side-offset="6">
-        {{ content }}
-        <TooltipArrow class="arrow" />
-      </TooltipContent>
-    </TooltipPortal>
-  </TooltipRoot>
+  <TooltipProvider>
+    <TooltipRoot>
+      <TooltipTrigger as-child>
+        <slot />
+      </TooltipTrigger>
+      <TooltipPortal>
+        <TooltipContent class="tooltip" :side-offset="6">
+          {{ content }}
+          <TooltipArrow class="arrow" />
+        </TooltipContent>
+      </TooltipPortal>
+    </TooltipRoot>
+  </TooltipProvider>
 </template>
 
 <style scoped>

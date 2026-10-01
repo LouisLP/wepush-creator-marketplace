@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="K extends string">
+import InfoTip from './InfoTip.vue'
+
 export interface FactorCopy { label: string, hint: string }
 
 defineProps<{
@@ -16,12 +18,11 @@ defineProps<{
     </figcaption>
     <div v-for="f in factors" :key="f.key" class="row">
       <span class="label">
-        {{ copy[f.key].label }}
+        <span>{{ copy[f.key].label }} <InfoTip :content="copy[f.key].hint" /></span>
         <small class="muted">{{ Math.round(f.weight * 100) }}% weight</small>
       </span>
       <meter :value="f.value" min="0" max="1" :aria-label="copy[f.key].label" />
       <span class="points">+{{ Math.round(f.contribution) }}</span>
-      <small class="hint muted">{{ copy[f.key].hint }}</small>
     </div>
   </figure>
 </template>
@@ -40,7 +41,7 @@ figcaption strong {
 .row {
   display: grid;
   grid-template-columns: minmax(7rem, 10rem) 1fr auto;
-  gap: var(--space-2xs) var(--space-sm);
+  gap: var(--space-xs) var(--space-md);
   align-items: center;
 }
 
@@ -55,9 +56,5 @@ meter {
 .points {
   font-variant-numeric: tabular-nums;
   font-weight: var(--font-weight-semibold);
-}
-
-.hint {
-  grid-column: 1 / -1;
 }
 </style>
