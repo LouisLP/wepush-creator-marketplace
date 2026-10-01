@@ -66,6 +66,8 @@ export interface BidOutcome {
   rank: number
   status: 'won' | 'lost'
   lossReason: LossReason | null
+  /** Budget left when this Bid's turn came; null for ineligible Bids. */
+  remainingBudgetCents: Cents | null
   factors: Factor[]
 }
 
