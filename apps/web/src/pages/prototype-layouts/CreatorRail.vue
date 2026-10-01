@@ -28,12 +28,11 @@ const showBids = computed(() => variant.value !== 'B' || tab.value === 'bids')
       </h2>
       <ul class="p-rail-list">
         <li v-for="c in matched" :key="c.id">
-          <RouterLink :to="to({ c: c.id })" class="p-rail-item" :class="{ compact: variant === 'C' }" :aria-current="campaign === c.id ? 'page' : undefined">
+          <RouterLink :to="to({ c: c.id })" class="p-rail-item" :class="{ compact: variant !== 'B' }" :aria-current="campaign === c.id ? 'page' : undefined">
             <strong>{{ c.title }}</strong>
             <span class="p-row meta">
               <PBadge :label="`Relevance ${c.relevance}`">{{ c.relevance }}</PBadge>
-              <PBadge v-if="variant !== 'C'" :tone="deadlineState(c).tone" :icon="deadlineState(c).icon">{{ deadlineState(c).label }}</PBadge>
-              <span v-if="variant === 'A'" class="muted p-xs p-num">~{{ usdShort(c.quote.suggestedCents) }}</span>
+              <PBadge v-if="variant === 'B'" :tone="deadlineState(c).tone" :icon="deadlineState(c).icon">{{ deadlineState(c).label }}</PBadge>
             </span>
           </RouterLink>
         </li>
@@ -45,11 +44,11 @@ const showBids = computed(() => variant.value !== 'B' || tab.value === 'bids')
       </h2>
       <ul class="p-rail-list">
         <li v-for="c in myBids" :key="c.id">
-          <RouterLink :to="to({ c: c.id })" class="p-rail-item" :class="{ compact: variant === 'C' }" :aria-current="campaign === c.id ? 'page' : undefined">
+          <RouterLink :to="to({ c: c.id })" class="p-rail-item" :class="{ compact: variant !== 'B' }" :aria-current="campaign === c.id ? 'page' : undefined">
             <strong>{{ c.title }}</strong>
             <span class="p-row meta">
-              <POutcomeBadges viewer="creator" :status="c.bid!.status" :rank="c.bid!.rank" :icon-only="variant === 'C'" />
-              <span v-if="variant !== 'C'" class="muted p-xs p-num">{{ usdShort(c.bid!.feeCents) }}</span>
+              <POutcomeBadges viewer="creator" :status="c.bid!.status" :rank="c.bid!.rank" :icon-only="variant !== 'B'" />
+              <span v-if="variant === 'B'" class="muted p-xs p-num">{{ usdShort(c.bid!.feeCents) }}</span>
             </span>
           </RouterLink>
         </li>

@@ -57,13 +57,13 @@ const Cre = computed(() => ({ A: CreatorA, B: CreatorB, C: CreatorC })[variant.v
       </div>
     </div>
   </main>
-  <PSwitcher :variants="[{ key: 'A', name: 'Glance + disclosures' }, { key: 'B', name: 'Tabs + segmented rails' }, { key: 'C', name: 'Inspector aside' }]" />
+  <PSwitcher :variants="[{ key: 'A', name: 'Verdict — glance + disclosures, compact rails' }, { key: 'B', name: 'Tabs + segmented rails' }, { key: 'C', name: 'Inspector aside' }]" />
 </template>
 
 <style scoped>
 .content { max-inline-size: 76rem; margin-inline: auto; padding: var(--space-lg) var(--space-gutter) var(--space-4xl); }
 .content.v-C { max-inline-size: 92rem; }
-.workspace { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: var(--space-xs) var(--space-xl); align-items: start; }
+.workspace { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: var(--space-md) var(--space-2xl); align-items: start; }
 .crumbs { grid-column: 1 / -1; }
 .rail { position: sticky; inset-block-start: 4.5rem; }
 .v-C .workspace { grid-template-columns: 14rem minmax(0, 1fr); }

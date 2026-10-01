@@ -35,7 +35,7 @@ const groups = computed(() => (variant.value === 'B' ? [{ key: tab.value, items:
       </h2>
       <ul class="p-rail-list">
         <li v-for="c in g.items" :key="c.id">
-          <RouterLink :to="to({ c: c.id })" class="p-rail-item" :class="{ compact: variant === 'C' }" :aria-current="campaign === c.id ? 'page' : undefined">
+          <RouterLink :to="to({ c: c.id })" class="p-rail-item" :class="{ compact: variant !== 'B' }" :aria-current="campaign === c.id ? 'page' : undefined">
             <span class="title">
               <Icon :icon="platformIcon(c.platform)" :aria-label="platformLabel(c.platform)" class="muted" />
               <strong>{{ c.title }}</strong>

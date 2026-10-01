@@ -1,6 +1,6 @@
 /* PROTOTYPE (#52) — throwaway kit styles. Unlayered on purpose so it wins over the real layers. */
-.p-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
-.p-stack { display: grid; gap: var(--space-md); align-content: start; }
+.p-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+.p-stack { display: grid; gap: var(--space-lg); align-content: start; }
 .p-num { font-variant-numeric: tabular-nums; }
 .p-small { font-size: var(--font-size-sm); }
 .p-xs { font-size: var(--font-size-xs); }
@@ -40,13 +40,13 @@
 .p-iconbtn { display: inline-grid; place-items: center; padding: var(--space-2xs); border: 0; border-radius: var(--radius-md); background: none; color: var(--color-text-secondary); cursor: pointer; }
 .p-iconbtn:hover { background: var(--color-bg-surface-hover); color: var(--color-text-primary); }
 
-.p-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: var(--space-md); }
+.p-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: var(--space-lg); }
 .p-kpis dt { color: var(--color-text-muted); font-size: var(--font-size-xs); display: flex; align-items: center; gap: 0.3em; }
 .p-kpis dd { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 0.4em; flex-wrap: wrap; }
 
 .p-table { inline-size: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
 .p-table th { text-align: start; color: var(--color-text-muted); font-weight: normal; font-size: var(--font-size-xs); padding: var(--space-2xs) var(--space-xs); border-bottom: 1px solid var(--color-border-subtle); }
-.p-table td { padding: var(--space-xs); border-bottom: 1px solid var(--color-border-subtle); vertical-align: middle; }
+.p-table td { padding: var(--space-sm) var(--space-xs); border-bottom: 1px solid var(--color-border-subtle); vertical-align: middle; }
 .p-table .num { text-align: end; font-variant-numeric: tabular-nums; }
 .p-table tr.lost td { color: var(--color-text-muted); }
 .p-table tr.clickable { cursor: pointer; }
@@ -58,10 +58,10 @@
 
 .p-empty { display: grid; place-items: center; gap: var(--space-sm); padding: var(--space-2xl); text-align: center; color: var(--color-text-muted); border: 1px dashed var(--color-border-default); border-radius: var(--radius-lg); }
 
-.p-rail-list { list-style: none; display: grid; gap: 2px; padding: 0; }
-.p-rail-item { display: grid; gap: 2px; padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-md); text-decoration: none; color: inherit; }
+.p-rail-list { list-style: none; display: grid; gap: var(--space-2xs); padding: 0; }
+.p-rail-item { display: grid; gap: var(--space-2xs); padding: var(--space-sm); border: 1px solid transparent; border-radius: var(--radius-md); text-decoration: none; color: inherit; }
 .p-rail-item:hover { background: var(--color-bg-surface-hover); }
-.p-rail-item[aria-current='page'] { background: var(--color-bg-surface-raised); box-shadow: inset 3px 0 var(--color-accent-default); }
+.p-rail-item[aria-current='page'] { background: var(--color-bg-surface-raised); border-color: var(--color-border-default); }
 .p-rail-head { color: var(--color-text-muted); font-size: var(--font-size-xs); text-transform: uppercase; letter-spacing: 0.05em; padding: var(--space-xs) var(--space-sm) 0; }
 
 .content :is(p, span, dt, dd, button, a, summary, h1, h2, h3, td, li) > svg { display: inline-block; vertical-align: -0.125em; }
