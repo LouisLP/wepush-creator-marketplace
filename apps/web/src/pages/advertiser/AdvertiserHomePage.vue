@@ -16,11 +16,8 @@ const campaigns = useAdvertiserCampaignsStore()
       No campaigns yet. Create one to see which Creators it reaches and what they’d likely charge.
     </p>
     <p v-else class="muted">
-      Pick a campaign from the list, or create a new one.
+      Pick a campaign from the list.
     </p>
-    <RouterLink :to="{ name: 'advertiser-campaign-new' }" class="btn">
-      New Campaign
-    </RouterLink>
   </section>
 </template>
 

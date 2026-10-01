@@ -1,6 +1,4 @@
 <script setup lang="ts" generic="K extends string">
-import InfoTip from './InfoTip.vue'
-
 export interface FactorCopy { label: string, hint: string }
 
 defineProps<{
@@ -18,10 +16,10 @@ defineProps<{
     </figcaption>
     <div v-for="f in factors" :key="f.key" class="row">
       <span class="label">
-        <span>{{ copy[f.key].label }} <InfoTip :content="copy[f.key].hint" /></span>
+        <span :title="copy[f.key].hint">{{ copy[f.key].label }}</span>
         <small class="muted">{{ Math.round(f.weight * 100) }}% weight</small>
       </span>
-      <meter :value="f.value" min="0" max="1" :aria-label="copy[f.key].label" />
+      <meter :value="f.value" min="0" max="1" :aria-label="copy[f.key].label" :aria-description="copy[f.key].hint" />
       <span class="points">+{{ Math.round(f.contribution) }}</span>
     </div>
   </figure>

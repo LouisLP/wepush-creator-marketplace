@@ -77,7 +77,7 @@ watch(campaign, (c) => {
         Bids <small class="muted">{{ campaign.bids.length }}</small>
         <InfoTip
           v-if="campaign.provisional && campaign.bids.length"
-          content="Provisional Ranks: what Closing would decide if it ran now. Open a Bid to see why."
+          content="Ranks if bidding closed now."
         />
       </h2>
       <BidsTable :bids="campaign.bids" :target-cpm-cents="campaign.targetCpmCents" :provisional="campaign.provisional" />

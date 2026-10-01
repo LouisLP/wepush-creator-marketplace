@@ -3,6 +3,8 @@ import type { Advertiser } from '@wepush/contracts'
 import { createAdvertiser, CreateAdvertiserBodySchema } from '@wepush/contracts'
 import { ref } from 'vue'
 import { ApiError, call, fieldErrors, messageFor } from '@/api'
+import AppField from '@/components/kit/AppField.vue'
+import AppTextInput from '@/components/kit/AppTextInput.vue'
 
 const emit = defineEmits<{ created: [advertiser: Advertiser] }>()
 
@@ -37,11 +39,9 @@ async function submit() {
 
 <template>
   <form class="form" novalidate @submit.prevent="submit">
-    <label class="field">
-      <span>Brand name</span>
-      <input v-model="name" name="name" autocomplete="organization" required>
-      <small v-if="errors.name" class="field-error">{{ errors.name }}</small>
-    </label>
+    <AppField v-slot="f" label="Brand name" :error="errors.name">
+      <AppTextInput :id="f.id" v-model="name" name="name" autocomplete="organization" required :aria-describedby="f.describedby" :aria-invalid="f.invalid" />
+    </AppField>
     <p v-if="formError" class="alert" role="alert">
       {{ formError }}
     </p>
@@ -54,6 +54,6 @@ async function submit() {
 <style scoped>
 .form {
   display: grid;
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 </style>

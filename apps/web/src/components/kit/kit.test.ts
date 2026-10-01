@@ -1,12 +1,18 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { DialogContent, TooltipProvider } from 'reka-ui'
+import { DialogContent, SelectContent, TooltipProvider } from 'reka-ui'
 import { afterEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import IconTrophy from '~icons/lucide/trophy'
 import AppBadge from './AppBadge.vue'
 import AppButton from './AppButton.vue'
+import AppCheckboxGroup from './AppCheckboxGroup.vue'
 import AppCollapsible from './AppCollapsible.vue'
 import AppDialog from './AppDialog.vue'
+import AppField from './AppField.vue'
+import AppNumberField from './AppNumberField.vue'
+import AppSelect from './AppSelect.vue'
+import AppSlider from './AppSlider.vue'
+import AppTextInput from './AppTextInput.vue'
 import AppTooltip from './AppTooltip.vue'
 
 afterEach(() => {
@@ -134,5 +140,92 @@ describe('appTooltip', () => {
 
     expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('TikTok')
     wrapper.unmount()
+  })
+})
+
+describe('appField', () => {
+  it('labels its control and describes it with the error and hint', () => {
+    const wrapper = mount(AppField, {
+      props: { label: 'Handle', hint: 'Public', error: 'Required' },
+      slots: { default: `<template #default="f"><input :id="f.id" :aria-describedby="f.describedby" :aria-invalid="f.invalid"></template>` },
+    })
+    const input = wrapper.get('input')
+
+    expect(wrapper.get('label').attributes('for')).toBe(input.attributes('id'))
+    const described = input.attributes('aria-describedby')!.split(' ').map(id => wrapper.get(`#${id}`).text())
+    expect(described).toEqual(['Required', 'Public'])
+    expect(input.attributes('aria-invalid')).toBe('true')
+  })
+})
+
+describe('appTextInput', () => {
+  it('binds v-model and passes attributes to the input', async () => {
+    const wrapper = mount(AppTextInput, { props: { 'modelValue': '', 'onUpdate:modelValue': () => {} }, attrs: { name: 'handle' } })
+
+    await wrapper.get('input[name="handle"]').setValue('@mia')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([['@mia']])
+  })
+})
+
+describe('appNumberField', () => {
+  it('commits a typed value on blur, and steps from the buttons', async () => {
+    const wrapper = mount(AppNumberField, { props: { 'modelValue': 10, 'min': 0, 'step': 5, 'onUpdate:modelValue': () => {} }, attrs: { name: 'n' } })
+    const input = wrapper.get('input[name="n"]')
+
+    await input.setValue('42')
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    await input.trigger('blur')
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([42])
+
+    await wrapper.get('[aria-label="Increase"]').trigger('pointerdown')
+    expect(wrapper.emitted('update:modelValue')?.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('appSelect', () => {
+  it('shows the selected label and picks another option', async () => {
+    const wrapper = mount(AppSelect, {
+      props: { 'modelValue': 'tiktok', 'options': [{ value: 'tiktok', label: 'TikTok' }, { value: 'youtube', label: 'YouTube' }], 'onUpdate:modelValue': () => {} },
+      attachTo: document.body,
+    })
+    await flushPromises()
+    const trigger = wrapper.get('button')
+    expect(trigger.text()).toContain('TikTok')
+
+    await trigger.trigger('pointerdown', { button: 0, pointerType: 'mouse' })
+    await flushPromises()
+    const option = wrapper.findComponent(SelectContent).findAll('[role="option"]').find(o => o.text() === 'YouTube')!
+    await option.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['youtube'])
+    wrapper.unmount()
+  })
+})
+
+describe('appCheckboxGroup', () => {
+  it('toggles values in and out of the array', async () => {
+    const wrapper = mount(AppCheckboxGroup, {
+      props: { 'modelValue': ['food'], 'options': [{ value: 'food', label: 'Food' }, { value: 'tech', label: 'Tech' }], 'onUpdate:modelValue': (v: string[]) => wrapper.setProps({ modelValue: v }) },
+    })
+    const [food, tech] = wrapper.findAll('[role="checkbox"]')
+
+    expect(food!.attributes('aria-checked')).toBe('true')
+    await tech!.trigger('click')
+    await food!.trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([['tech']])
+  })
+})
+
+describe('appSlider', () => {
+  it('exposes a labelled thumb clamped to the range', async () => {
+    const wrapper = mount(AppSlider, { props: { modelValue: 500, min: 10, max: 225, label: 'Fee' } })
+    await flushPromises()
+    const thumb = wrapper.get('[role="slider"]')
+
+    expect(thumb.attributes('aria-label')).toBe('Fee')
+    expect(thumb.attributes('aria-valuenow')).toBe('225')
   })
 })
