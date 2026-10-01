@@ -1,0 +1,7 @@
+# Zod contracts shared by api and web; RFC 9457 errors
+
+`@wepush/contracts` holds Zod 4 schemas and `defineEndpoint({ method, path, params, query, body, response })` descriptors. They're the single source for both sides. The api registers routes from the descriptors with `fastify-type-provider-zod`, which validates requests and serializes responses, so unlisted fields get dropped. Web calls them through a small typed `call(endpoint, opts)` over `fetch`. There's no codegen and no OpenAPI-first spec; OpenAPI is generated in dev only, at `/api/docs`.
+
+Routes are split by role (`/api/advertiser/*`, `/api/creator/*`) and return one DTO per viewer. That way sealed-bid visibility comes from which DTO a route returns, not from stripping fields conditionally. Validation has three tiers: the edge checks shape only (`.strict()` objects), domain/services check rules that need context, and DB constraints are the backstop. On the wire, money is integer cents, times are ISO-8601 UTC, and lists are `{ items }`.
+
+Errors are `application/problem+json` (`type: about:blank`, `title`, `status`, `detail`) plus `code` and `requestId`, with per-code extras at the top level. `ProblemSchema` is a discriminated union in contracts. The api has one `AppError(code, detail, extras)` and an exhaustive `STATUS_BY_CODE`. 409 means the state of the world blocks the request; 422 means the request breaks a rule about its own values. 4xx is logged at info, 5xx at error, and 500s never leak the message. Web owns user-facing copy, keyed by `code`.

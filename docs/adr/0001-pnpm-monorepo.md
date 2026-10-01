@@ -1,0 +1,3 @@
+# pnpm monorepo: three apps, three shared packages
+
+One pnpm workspace holds the deployables `apps/{web,api,worker}` and the shared `packages/{domain,db,contracts}`, all named `@wepush/*` and linked with `workspace:*`. Internal packages ship raw TypeScript (`exports: "./src/index.ts"`) with no per-package build, and there's no turborepo: `pnpm -r` is enough at this size. Dependencies point one way: web → contracts; api → contracts, domain, db; worker → domain, db; contracts and db → domain. Web never imports domain or db directly. Tooling is shared from the root (`tsconfig.base.json`, one antfu `eslint.config.js`, one `vitest.config.ts`), and the runtime is pinned to Node 24 (`.nvmrc`, `engines`) and `pnpm@11.17.0`.

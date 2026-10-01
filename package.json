@@ -1,0 +1,36 @@
+{
+  "name": "wepush-creator-marketplace",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=24.12"
+  },
+  "scripts": {
+    "dev": "pnpm infra:up && pnpm db:migrate && pnpm dev:apps",
+    "dev:apps": "pnpm -r --parallel --filter './apps/*' dev",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v",
+    "db:migrate": "pnpm --filter @wepush/db migrate",
+    "db:generate": "pnpm --filter @wepush/db generate",
+    "db:seed": "pnpm --filter @wepush/db seed",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc -p tsconfig.json &&pnpm --filter @wepush/web typecheck",
+    "test": "node --env-file-if-exists=.env node_modules/vitest/vitest.mjs run",
+    "test:unit": "pnpm test --project unit --project web",
+    "test:int": "pnpm test --project integration",
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.5.1",
+    "@types/node": "^24.13.4",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitest/coverage-v8": "^5.0.3",
+    "eslint": "^10.11.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}
