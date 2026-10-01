@@ -1,4 +1,4 @@
-import type { CreatorId, CreatorProfile } from '@wepush/domain'
+import type { CreatorId, CreatorProfile, Platform } from '@wepush/domain'
 import type { DbExecutor } from '../client.ts'
 import { asc, eq } from 'drizzle-orm'
 import { translatingDbErrors } from '../errors.ts'
@@ -26,6 +26,15 @@ export function createCreatorRepo(exec: DbExecutor) {
     async list() {
       const rows = await exec.select().from(creators).orderBy(asc(creators.handle))
       return rows.map(toCreator)
+    },
+
+    async listProfilesOn(platform: Platform): Promise<CreatorProfile[]> {
+      return exec.select({
+        platform: creators.platform,
+        category: creators.category,
+        followers: creators.followers,
+        engagementRate: creators.engagementRate,
+      }).from(creators).where(eq(creators.platform, platform))
     },
 
     async getById(id: string) {

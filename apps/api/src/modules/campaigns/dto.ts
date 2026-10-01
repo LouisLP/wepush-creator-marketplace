@@ -1,8 +1,11 @@
-import type { AdvertiserCampaignSummary, CreatorCampaign, MatchedCampaign } from '@wepush/contracts'
+import type { AdvertiserCampaignSummary, CampaignPreviewBodySchema, CreatorCampaign, MatchedCampaign } from '@wepush/contracts'
 import type { Campaign } from '@wepush/db'
+import type { ProposedTerms } from '@wepush/domain'
+import type { z } from 'zod'
 import type { AssessedCampaign } from './creator-service.ts'
+import { cents } from '@wepush/domain'
 
-export function toAdvertiserCampaignSummary(c: Campaign): AdvertiserCampaignSummary {
+export function toAdvertiserCampaignSummary(c: Campaign & { bidCount: number }): AdvertiserCampaignSummary {
   return {
     id: c.id,
     title: c.title,
@@ -10,6 +13,8 @@ export function toAdvertiserCampaignSummary(c: Campaign): AdvertiserCampaignSumm
     status: c.status,
     budgetCents: c.terms.budgetCents,
     biddingDeadline: c.terms.biddingDeadline.toISOString(),
+    bidCount: c.bidCount,
+    spentCents: c.outcome?.spentCents ?? null,
     createdAt: c.createdAt.toISOString(),
   }
 }
@@ -44,5 +49,18 @@ export function toCreatorCampaign(a: AssessedCampaign & Pick<CreatorCampaign, 'r
     relevance: { value: a.relevance, factors: a.factors },
     feeQuote: a.feeQuote,
     hasBid: a.hasBid,
+  }
+}
+
+export function toProposedTerms(body: z.output<typeof CampaignPreviewBodySchema>): ProposedTerms {
+  return {
+    requirements: {
+      platform: body.platform,
+      categories: body.categories,
+      minFollowers: body.minFollowers,
+      minEngagementRate: body.minEngagementRate,
+    },
+    budgetCents: cents(body.budgetCents),
+    targetCpmCents: cents(body.targetCpmCents),
   }
 }

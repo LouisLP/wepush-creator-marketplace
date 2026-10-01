@@ -38,6 +38,7 @@ export const ProblemSchema = z.discriminatedUnion('code', [
   problem('requirements_not_met').extend({ checks: z.array(RequirementCheckSchema) }),
   problem('fee_out_of_range').extend({ minCents: z.int(), maxCents: z.int() }),
   problem('deadline_in_past'),
+  problem('deadline_out_of_range').extend({ earliest: z.iso.datetime(), latest: z.iso.datetime() }),
   problem('internal_error'),
 ])
 

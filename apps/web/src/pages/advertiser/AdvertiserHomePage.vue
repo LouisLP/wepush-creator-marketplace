@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { listAdvertiserCampaigns } from '@wepush/contracts'
-import { call } from '@/api'
-import { useRequest } from '@/composables/useRequest.ts'
-import { formatCents, formatDateTime } from '@/lib/format.ts'
+import { useAdvertiserCampaignsStore } from '@/stores/advertiserCampaigns.ts'
 
-const campaigns = useRequest(() => call(listAdvertiserCampaigns))
+const campaigns = useAdvertiserCampaignsStore()
 </script>
 
 <template>
@@ -12,36 +9,25 @@ const campaigns = useRequest(() => call(listAdvertiserCampaigns))
     <h1 id="campaigns-heading">
       Campaigns
     </h1>
-    <p v-if="campaigns.error.value" class="alert" role="alert">
-      {{ campaigns.error.value }}
+    <p v-if="campaigns.error" class="alert" role="alert">
+      {{ campaigns.error }}
     </p>
-    <p v-else-if="campaigns.data.value?.items.length === 0" class="muted">
-      No campaigns yet.
+    <p v-else-if="campaigns.items?.length === 0" class="muted">
+      No campaigns yet. Create one to see which Creators it reaches and what they’d likely charge.
     </p>
-    <ul v-else class="list">
-      <li v-for="c in campaigns.data.value?.items" :key="c.id" class="card">
-        <h2>{{ c.title }}</h2>
-        <p class="muted">
-          {{ c.platform }} · {{ c.status }} · budget {{ formatCents(c.budgetCents) }} · bidding closes {{ formatDateTime(c.biddingDeadline) }}
-        </p>
-      </li>
-    </ul>
+    <p v-else class="muted">
+      Pick a campaign from the list, or create a new one.
+    </p>
+    <RouterLink :to="{ name: 'advertiser-campaign-new' }" class="btn">
+      New Campaign
+    </RouterLink>
   </section>
 </template>
 
 <style scoped>
-.page,
-.list {
+.page {
   display: grid;
   gap: var(--space-md);
-}
-
-.list {
-  padding: 0;
-  list-style: none;
-}
-
-h2 {
-  font-size: var(--font-size-lg);
+  justify-items: start;
 }
 </style>

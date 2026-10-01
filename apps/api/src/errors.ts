@@ -13,6 +13,7 @@ export const STATUS_BY_CODE: Record<ErrorCode, number> = {
   requirements_not_met: 422,
   fee_out_of_range: 422,
   deadline_in_past: 422,
+  deadline_out_of_range: 422,
   internal_error: 500,
 }
 
