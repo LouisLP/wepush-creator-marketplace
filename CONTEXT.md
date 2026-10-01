@@ -61,12 +61,20 @@ A Campaign's final state once Closing has run, whether or not it has any Winners
 _Avoid_: Ended, finished, expired, completed
 
 **Matched Campaign**:
-An Open Campaign, before its Bidding Deadline, whose Requirements a given Creator passes. Only Matched Campaigns can be bid on.
+An Open Campaign, before its Bidding Deadline, whose Requirements a given Creator's current profile passes in full (thresholds inclusive, no tolerance). Only Matched Campaigns can be bid on; ones the Creator has already bid on stay Matched but drop out of the Creator's list.
 _Avoid_: Eligible campaign, recommendation, feed item
 
 **Relevance**:
-How well a Matched Campaign suits a given Creator; orders the Creator's list of Matched Campaigns.
+How well a Matched Campaign suits a given Creator, from 0 to 100, weighing Expected Payout and Budget Fit; orders the Creator's list of Matched Campaigns. Computed on read, never stored.
 _Avoid_: Rank (reserved for Bids), match score, fit
+
+**Expected Payout**:
+What a Creator's Post is worth to a Campaign at its Target CPM: their Estimated Impressions priced at the Target CPM.
+_Avoid_: Expected earnings, fair fee, value
+
+**Budget Fit**:
+How many Creators like a given Creator a Campaign's Budget can afford, at that Creator's Expected Payout.
+_Avoid_: Slots, headroom, capacity
 
 ### Pricing
 
