@@ -76,7 +76,7 @@ _Avoid_: Deliverable, content piece, placement
 
 **Fee**:
 The flat amount a Creator asks, in a Bid, to make one Post.
-_Avoid_: Price, rate, quote, amount
+_Avoid_: Price, rate, quote (except in Fee Quote), amount
 
 **Estimated Impressions**:
 The number of views the system expects a Creator's Post to get, derived from the Creator's follower count, Reach Rate, and engagement rate relative to the Baseline Engagement Rate.
@@ -98,9 +98,21 @@ _Avoid_: Average ER, benchmark ER
 The cost per thousand impressions an Advertiser aims to pay on a Campaign.
 _Avoid_: Max CPM, goal CPM
 
-**CPM Ceiling**:
-The highest Effective CPM a Bid may have on a Campaign: a fixed multiple of its Target CPM. A Bid above it is not an Eligible Bid.
-_Avoid_: CPM cap, price limit
+**Parity Fee**:
+The Fee at which a Bid's Effective CPM would equal the Campaign's Target CPM for a given Creator; covers Estimated Impressions only, not production or rights.
+_Avoid_: Fair price, market rate
+
+**Suggested Fee**:
+The Parity Fee kept within the Fee Range; offered to a Creator as the starting Fee for their Bid.
+_Avoid_: Recommended price, fair price
+
+**Fee Range**:
+The lowest and highest Fee a Bid may ask on a Campaign. The lowest is a flat floor, the same on every Platform. The highest is a fixed multiple of the Parity Fee, never below the floor and never above the Budget.
+_Avoid_: Price bounds, limits
+
+**Fee Quote**:
+What a Creator is shown before bidding on a Campaign: their Estimated Impressions, Suggested Fee and Fee Range.
+_Avoid_: Estimate, offer
 
 ### Bidding
 
@@ -113,7 +125,7 @@ The Creator's follower count, engagement rate, Estimated Impressions and Effecti
 _Avoid_: Bid stats, frozen profile
 
 **Eligible Bid**:
-A Bid whose Bid Snapshot meets the Campaign's Requirements and whose Effective CPM is within the CPM Ceiling; only Eligible Bids compete for the Budget at Closing.
+A Bid whose Bid Snapshot meets the Campaign's Requirements and whose Fee is within the Fee Range; only Eligible Bids compete for the Budget at Closing.
 _Avoid_: Valid bid, qualifying bid
 
 **Pending**:
@@ -129,7 +141,7 @@ A Bid not selected at Closing, always with a Loss Reason.
 _Avoid_: Rejected, declined, failed
 
 **Loss Reason**:
-The explanation given to a Creator for why their Bid was Lost, naming the first of these that applies: its Bid Snapshot did not meet the Requirements, its Effective CPM was above the CPM Ceiling, or its Fee did not fit the Remaining Budget.
+The explanation given to a Creator for why their Bid was Lost, naming the first of these that applies: its Bid Snapshot did not meet the Requirements, its Fee was outside the Fee Range, or its Fee did not fit the Remaining Budget.
 _Avoid_: Rejection reason, status reason
 
 **Remaining Budget**:
