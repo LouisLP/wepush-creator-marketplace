@@ -2,7 +2,7 @@ import type { CampaignState, RequirementCheck } from './matching.ts'
 import type { Result } from './result.ts'
 import type { BidSnapshot, Cents, CreatorProfile } from './types.ts'
 import { checkRequirements } from './matching.ts'
-import { effectiveCpmCents, estimateImpressions, feeRange } from './pricing.ts'
+import { effectiveCpmCents, estimateImpressions, feeRange, isWithinFeeRange } from './pricing.ts'
 import { err, ok } from './result.ts'
 
 export interface PlacementInput {
@@ -35,9 +35,9 @@ export function checkBidPlacement({ creator, campaign, feeCents, now, alreadyBid
     return err({ code: 'requirements_not_met', checks })
 
   const estimatedImpressions = estimateImpressions(creator)
-  const { minCents, maxCents } = feeRange(estimatedImpressions, terms)
-  if (feeCents < minCents || feeCents > maxCents)
-    return err({ code: 'fee_out_of_range', minCents, maxCents })
+  const range = feeRange(estimatedImpressions, terms)
+  if (!isWithinFeeRange(feeCents, range))
+    return err({ code: 'fee_out_of_range', ...range })
 
   return ok({
     followers: creator.followers,

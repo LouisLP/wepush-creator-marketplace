@@ -12,9 +12,11 @@ export interface AudienceStats {
   engagementRate: number
 }
 
+const meetsMinFollowers = (followers: number, { minFollowers }: Requirements) => followers >= minFollowers
+const meetsMinEngagement = (engagementRate: number, { minEngagementRate }: Requirements) => minEngagementRate === null || engagementRate >= minEngagementRate
+
 export function meetsAudienceThresholds(stats: AudienceStats, requirements: Requirements): boolean {
-  return stats.followers >= requirements.minFollowers
-    && (requirements.minEngagementRate === null || stats.engagementRate >= requirements.minEngagementRate)
+  return meetsMinFollowers(stats.followers, requirements) && meetsMinEngagement(stats.engagementRate, requirements)
 }
 
 export function checkRequirements(profile: CreatorProfile, requirements: Requirements): RequirementCheck[] {
@@ -22,13 +24,8 @@ export function checkRequirements(profile: CreatorProfile, requirements: Require
   return [
     { requirement: 'platform', passed: profile.platform === requirements.platform, actual: profile.platform, required: requirements.platform },
     { requirement: 'category', passed: requirements.categories.includes(profile.category), actual: profile.category, required: requirements.categories },
-    { requirement: 'minFollowers', passed: profile.followers >= minFollowers, actual: profile.followers, required: minFollowers },
-    {
-      requirement: 'minEngagement',
-      passed: minEngagementRate === null || profile.engagementRate >= minEngagementRate,
-      actual: profile.engagementRate,
-      required: minEngagementRate,
-    },
+    { requirement: 'minFollowers', passed: meetsMinFollowers(profile.followers, requirements), actual: profile.followers, required: minFollowers },
+    { requirement: 'minEngagement', passed: meetsMinEngagement(profile.engagementRate, requirements), actual: profile.engagementRate, required: minEngagementRate },
   ]
 }
 

@@ -1,10 +1,10 @@
 import type { LossReason } from './enums.ts'
 import type { BidOutcome, CampaignTerms, ClosingOutcome, Factor, PendingBid } from './types.ts'
 import { PLATFORM_BENCHMARKS } from './benchmarks.ts'
-import { factor } from './factors.ts'
+import { weighFactors } from './factors.ts'
 import { meetsAudienceThresholds } from './matching.ts'
 import { clamp, round2 } from './math.ts'
-import { feeRange } from './pricing.ts'
+import { feeRange, isWithinFeeRange } from './pricing.ts'
 import { cents } from './types.ts'
 
 export const SCORING_VERSION = 'v1'
@@ -24,16 +24,15 @@ export function scoreBid(campaign: CampaignTerms, bid: PendingBid): BidScore {
     cpm_fit: clamp(campaign.targetCpmCents / bid.snapshot.effectiveCpmCents, 0, 2) / 2,
     engagement: clamp(bid.snapshot.engagementRate / baselineEngagementRate, 0, 2) / 2,
   }
-  const factors = (Object.keys(SCORE_WEIGHTS) as ScoreFactorKey[]).map(key => factor(key, values[key], SCORE_WEIGHTS[key]))
-  return { score: round2(factors.reduce((sum, f) => sum + f.contribution, 0)), factors }
+  const { factors, total } = weighFactors(SCORE_WEIGHTS, values)
+  return { score: round2(total), factors }
 }
 
 /** The first eligibility gate a Bid fails, judged on its Bid Snapshot; null if Eligible. */
 function ineligibility(campaign: CampaignTerms, bid: PendingBid): LossReason | null {
   if (!meetsAudienceThresholds(bid.snapshot, campaign.requirements))
     return 'requirements_not_met'
-  const { minCents, maxCents } = feeRange(bid.snapshot.estimatedImpressions, campaign)
-  if (bid.feeCents < minCents || bid.feeCents > maxCents)
+  if (!isWithinFeeRange(bid.feeCents, feeRange(bid.snapshot.estimatedImpressions, campaign)))
     return 'fee_out_of_range'
   return null
 }

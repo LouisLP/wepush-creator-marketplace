@@ -1,6 +1,6 @@
 # Marketplace formulas: CPM-anchored pricing, absolute Relevance, greedy Scoring v1
 
-Every marketplace number derives from one heuristic, **Estimated Impressions**, and is anchored on the Advertiser's **Target CPM**. All of it lives as pure functions in `@wepush/domain` (ADR 0005). Bid placement and Closing call the same functions, so the Bid Snapshot written at placement can't drift from what Closing judges (ADR 0004). Closing is stamped `SCORING_VERSION = 'v1'`. Decided in #25, #20, #19 and #21; constants sourced in `docs/research/platform-reach-engagement-benchmarks.md`.
+Every marketplace number derives from one heuristic, **Estimated Impressions**, and is anchored on the Advertiser's **Target CPM**. All of it lives as pure functions in `@wepush/domain` (ADR 0005). Bid placement and Closing call the same functions, so the Bid Snapshot written at placement can't drift from what Closing judges (ADR 0004). Closing is stamped `SCORING_VERSION = 'v1'`, replacing ADR 0005's skeleton placeholder. Decided in #25, #20, #19 and #21; constants sourced in `docs/research/platform-reach-engagement-benchmarks.md`.
 
 ## Formulas
 

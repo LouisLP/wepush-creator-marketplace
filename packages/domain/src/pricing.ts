@@ -7,7 +7,7 @@ import { cents } from './types.ts'
 export const FEE_FLOOR_CENTS = cents(1_000)
 export const MAX_TARGET_CPM_MULTIPLE = 3
 
-export interface ReachProfile {
+export interface ImpressionInputs {
   platform: Platform
   followers: number
   engagementRate: number
@@ -25,7 +25,7 @@ export interface FeeQuote {
   maxFeeCents: Cents
 }
 
-export function estimateImpressions({ platform, followers, engagementRate }: ReachProfile): number {
+export function estimateImpressions({ platform, followers, engagementRate }: ImpressionInputs): number {
   const { reachRate, baselineEngagementRate } = PLATFORM_BENCHMARKS[platform]
   const engagementLift = clamp(engagementRate / baselineEngagementRate, 0.5, 2)
   return Math.max(1, Math.round(followers * reachRate * engagementLift))
@@ -39,16 +39,23 @@ export function parityFeeCents(estimatedImpressions: number, targetCpmCents: Cen
   return cents(Math.round(estimatedImpressions * targetCpmCents / 1000))
 }
 
-export function feeRange(estimatedImpressions: number, terms: CampaignTerms): FeeRange {
-  const parity = parityFeeCents(estimatedImpressions, terms.targetCpmCents)
-  const max = Math.min(terms.budgetCents, Math.max(FEE_FLOOR_CENTS, Math.round(MAX_TARGET_CPM_MULTIPLE * parity)))
+function feeRangeFromParity(parity: Cents, budgetCents: Cents): FeeRange {
+  const max = Math.min(budgetCents, Math.max(FEE_FLOOR_CENTS, Math.round(MAX_TARGET_CPM_MULTIPLE * parity)))
   return { minCents: FEE_FLOOR_CENTS, maxCents: cents(max) }
 }
 
-export function feeQuote(profile: ReachProfile, terms: CampaignTerms): FeeQuote {
+export function feeRange(estimatedImpressions: number, terms: CampaignTerms): FeeRange {
+  return feeRangeFromParity(parityFeeCents(estimatedImpressions, terms.targetCpmCents), terms.budgetCents)
+}
+
+export function isWithinFeeRange(feeCents: Cents, { minCents, maxCents }: FeeRange): boolean {
+  return feeCents >= minCents && feeCents <= maxCents
+}
+
+export function feeQuote(profile: ImpressionInputs, terms: CampaignTerms): FeeQuote {
   const estimatedImpressions = estimateImpressions(profile)
-  const { minCents, maxCents } = feeRange(estimatedImpressions, terms)
   const parity = parityFeeCents(estimatedImpressions, terms.targetCpmCents)
+  const { minCents, maxCents } = feeRangeFromParity(parity, terms.budgetCents)
   return {
     estimatedImpressions,
     suggestedFeeCents: cents(Math.min(maxCents, Math.max(minCents, parity))),

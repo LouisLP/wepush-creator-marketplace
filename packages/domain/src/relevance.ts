@@ -1,7 +1,7 @@
-import type { ReachProfile } from './pricing.ts'
+import type { ImpressionInputs } from './pricing.ts'
 import type { CampaignTerms, Cents, Factor } from './types.ts'
 import { PLATFORM_BENCHMARKS } from './benchmarks.ts'
-import { factor } from './factors.ts'
+import { weighFactors } from './factors.ts'
 import { clamp } from './math.ts'
 import { estimateImpressions, parityFeeCents } from './pricing.ts'
 
@@ -17,7 +17,7 @@ export interface Relevance {
   factors: Factor<RelevanceFactorKey>[]
 }
 
-export function relevance(profile: ReachProfile, terms: CampaignTerms): Relevance {
+export function relevance(profile: ImpressionInputs, terms: CampaignTerms): Relevance {
   const { low, high } = PLATFORM_BENCHMARKS[terms.requirements.platform].cpmRangeCents
   const parity = parityFeeCents(estimateImpressions(profile), terms.targetCpmCents)
   const budgetFit = terms.budgetCents / Math.max(1, parity)
@@ -26,17 +26,22 @@ export function relevance(profile: ReachProfile, terms: CampaignTerms): Relevanc
     payout: clamp((terms.targetCpmCents - low) / (high - low), 0, 1),
     budget_fit: budgetFit < 1 ? 0 : Math.min(budgetFit, BUDGET_FIT_CAP) / BUDGET_FIT_CAP,
   }
-  const factors = (Object.keys(RELEVANCE_WEIGHTS) as RelevanceFactorKey[]).map(key => factor(key, values[key], RELEVANCE_WEIGHTS[key]))
+  const { factors, total } = weighFactors(RELEVANCE_WEIGHTS, values)
 
   return {
-    relevance: Math.round(factors.reduce((sum, f) => sum + f.contribution, 0)),
+    relevance: Math.round(total),
     parityFeeCents: parity,
     budgetFit,
     factors,
   }
 }
 
-export function byRelevance(a: { relevance: number, terms: CampaignTerms }, b: { relevance: number, terms: CampaignTerms }): number {
+export interface RelevantCampaign {
+  relevance: number
+  terms: CampaignTerms
+}
+
+export function byRelevance(a: RelevantCampaign, b: RelevantCampaign): number {
   return b.relevance - a.relevance
     || a.terms.biddingDeadline.getTime() - b.terms.biddingDeadline.getTime()
     || a.terms.id.localeCompare(b.terms.id)
