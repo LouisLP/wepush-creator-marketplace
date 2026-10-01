@@ -21,7 +21,7 @@ defineExpose({ reload: matched.reload })
     </p>
     <ul v-else class="items">
       <li v-for="c in matched.data.value?.items" :key="c.id">
-        <RouterLink :to="{ name: 'creator-campaign', params: { id: c.id } }" class="item">
+        <RouterLink :to="{ name: 'creator-campaign', params: { campaignId: c.id } }" class="item">
           <span class="relevance" :aria-label="`Relevance ${c.relevance.value}`">{{ c.relevance.value }}</span>
           <span class="body">
             <strong>{{ c.title }}</strong>

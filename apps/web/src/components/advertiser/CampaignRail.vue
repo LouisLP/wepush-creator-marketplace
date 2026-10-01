@@ -23,7 +23,7 @@ const campaigns = useAdvertiserCampaignsStore()
         </p>
         <ul>
           <li v-for="c in campaigns.open" :key="c.id">
-            <RouterLink :to="{ name: 'advertiser-campaign', params: { id: c.id } }">
+            <RouterLink :to="{ name: 'advertiser-campaign', params: { campaignId: c.id } }">
               <strong>{{ c.title }}</strong>
               <small class="muted">{{ c.bidCount }} {{ c.bidCount === 1 ? 'Bid' : 'Bids' }} · {{ formatTimeLeft(c.biddingDeadline) }}</small>
             </RouterLink>
@@ -36,7 +36,7 @@ const campaigns = useAdvertiserCampaignsStore()
         </h2>
         <ul>
           <li v-for="c in campaigns.closed" :key="c.id">
-            <RouterLink :to="{ name: 'advertiser-campaign', params: { id: c.id } }">
+            <RouterLink :to="{ name: 'advertiser-campaign', params: { campaignId: c.id } }">
               <strong>{{ c.title }}</strong>
               <small class="muted">Spent {{ formatCents(c.spentCents ?? 0) }} / {{ formatCents(c.budgetCents) }}</small>
             </RouterLink>

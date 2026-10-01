@@ -3,10 +3,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import router from '@/router'
-import { useIdentityStore } from '@/stores/identity.ts'
 import AdvertiserCampaignPage from './AdvertiserCampaignPage.vue'
 
 const ID = '01900000-0000-7000-8000-000000000001'
+const ADVERTISER_ID = '01900000-0000-7000-8000-0000000000a1'
 
 function bid(rank: number, handle: string, overrides: Partial<AdvertiserBid> = {}): AdvertiserBid {
   return {
@@ -62,7 +62,7 @@ function stubApi(...responses: AdvertiserCampaign[]) {
 async function mountPage() {
   const pinia = createPinia()
   setActivePinia(pinia)
-  useIdentityStore().set('advertiser', { id: '01900000-0000-7000-8000-0000000000a1', name: 'Glow Cosmetics' })
+  await router.push(`/advertisers/${ADVERTISER_ID}/campaigns/${ID}`)
   const wrapper = mount(AdvertiserCampaignPage, { props: { id: ID }, global: { plugins: [pinia, router] } })
   await flushPromises()
   return wrapper
@@ -82,7 +82,9 @@ describe('advertiser campaign page', () => {
     const fetch = stubApi(open)
     const wrapper = await mountPage()
 
-    expect(fetch).toHaveBeenCalledWith(`/api/advertiser/campaigns/${ID}`, expect.anything())
+    expect(fetch).toHaveBeenCalledWith(`/api/advertiser/campaigns/${ID}`, expect.objectContaining({
+      headers: expect.objectContaining({ 'x-advertiser-id': ADVERTISER_ID }),
+    }))
     const outcome = wrapper.get('#outcome-heading').element.closest('section')!
     expect(outcome.textContent).toContain('If it closed now')
     expect(outcome.textContent).toContain('Spent (projected)$130.00 of $150.00')

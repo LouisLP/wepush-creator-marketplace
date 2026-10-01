@@ -1,4 +1,4 @@
-import type { LossReason, Platform } from '@wepush/contracts'
+import type { Category, LossReason, Platform } from '@wepush/contracts'
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
@@ -17,6 +17,7 @@ export function formatVsTarget(effectiveCpmCents: number, targetCpmCents: number
 
 const PLATFORM_LABELS: Record<Platform, string> = { tiktok: 'TikTok', instagram: 'Instagram' }
 export const formatPlatform = (platform: Platform) => PLATFORM_LABELS[platform]
+export const formatCategory = (category: Category) => category[0]!.toUpperCase() + category.slice(1)
 
 const LOSS_REASON_LABELS: Record<LossReason, string> = {
   requirements_not_met: 'Snapshot didn’t meet the Requirements',

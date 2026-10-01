@@ -1,14 +1,16 @@
-import router, { pickerFor } from '@/router'
-import { useIdentityStore } from '@/stores/identity.ts'
+import { shallowRef } from 'vue'
+import router, { actorIdIn } from '@/router'
 import { createApiClient } from './client.ts'
 
 export { ApiError } from './client.ts'
 export { errorMessage, feeRangeMessage, fieldErrors, formErrorFor, messageFor } from './messages.ts'
 
+/** Actor id from the URL that the API refused (unknown or malformed); its workspace shows not-found. */
+export const rejectedActorId = shallowRef<string>()
+
 export const call = createApiClient({
-  actorIdFor: role => useIdentityStore().get(role)?.id,
+  actorIdFor: role => actorIdIn(router.currentRoute.value, role),
   onActorRejected: (role) => {
-    useIdentityStore().clear(role)
-    void router.push(pickerFor(role, router.currentRoute.value.fullPath))
+    rejectedActorId.value = actorIdIn(router.currentRoute.value, role)
   },
 })
