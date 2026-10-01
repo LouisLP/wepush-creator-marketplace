@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import fastifyStatic from '@fastify/static'
 
 export async function registerWeb(app: FastifyInstance, root: string) {
@@ -18,4 +18,8 @@ export function isSpaRoute(method: string, url: string) {
   return (method === 'GET' || method === 'HEAD')
     && path !== '/api' && !path.startsWith('/api/')
     && !path.slice(path.lastIndexOf('/')).includes('.')
+}
+
+export function spaFallback(req: FastifyRequest, reply: FastifyReply) {
+  return isSpaRoute(req.method, req.url) ? reply.sendFile('index.html') : undefined
 }

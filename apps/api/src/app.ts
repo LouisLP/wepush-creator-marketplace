@@ -12,7 +12,7 @@ import { creatorProfileRoutes, creatorRoutes } from './modules/creators/routes.t
 import { healthRoutes } from './modules/health/routes.ts'
 import { advertiserActor, creatorActor } from './plugins/actor.ts'
 import { registerErrorHandling } from './plugins/error-handler.ts'
-import { registerWeb } from './plugins/web.ts'
+import { registerWeb, spaFallback } from './plugins/web.ts'
 
 export interface AppDeps {
   repos: Repos
@@ -24,7 +24,6 @@ export interface AppDeps {
 export interface AppOptions {
   logger?: FastifyServerOptions['logger']
   docs?: boolean
-  /** Built web app directory to serve with an SPA fallback (prod only; dev uses the Vite proxy). */
   webRoot?: string
 }
 
@@ -41,7 +40,7 @@ export async function buildApp(deps: AppDeps, opts: AppOptions = {}) {
   app.addHook('onRequest', async (req, reply) => {
     reply.header('x-request-id', req.id)
   })
-  registerErrorHandling(app, { spaFallback: !!opts.webRoot })
+  registerErrorHandling(app, opts.webRoot ? spaFallback : undefined)
 
   if (opts.webRoot)
     await registerWeb(app, opts.webRoot)

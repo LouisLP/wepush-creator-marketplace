@@ -19,8 +19,10 @@ afterEach(() => app.close())
 afterAll(() => ctx.close())
 
 describe('health', () => {
+  const buildAppWithDbDown = () => buildApp({ ...ctx, pingDb: () => Promise.reject(new Error('db down')) })
+
   it('/healthz is up without touching the DB', async () => {
-    const down = await buildApp({ ...ctx, pingDb: () => Promise.reject(new Error('db down')) })
+    const down = await buildAppWithDbDown()
 
     const res = await down.inject({ method: 'GET', url: '/healthz' })
     await down.close()
@@ -37,7 +39,7 @@ describe('health', () => {
   })
 
   it('/readyz is 503 when the DB is unreachable', async () => {
-    const down = await buildApp({ ...ctx, pingDb: () => Promise.reject(new Error('db down')) })
+    const down = await buildAppWithDbDown()
 
     const res = await down.inject({ method: 'GET', url: '/readyz' })
     await down.close()
