@@ -23,6 +23,9 @@ function switchIdentity() {
         WePush
       </RouterLink>
       <span class="role">{{ role }}</span>
+      <RouterLink :to="`/${role}/prototype`" class="role">
+        Prototype #22
+      </RouterLink>
       <span class="who">{{ actingAs?.name }}</span>
       <button class="btn btn-ghost" @click="switchIdentity">
         Switch

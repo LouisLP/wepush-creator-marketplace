@@ -23,7 +23,8 @@ const creating = ref<Role | null>(null)
 
 function actAs(role: Role, who: Identity) {
   identity.set(role, who)
-  void router.push(`/${role}`)
+  const redirect = route.query.redirect as string | undefined
+  void router.push(redirect?.startsWith(`/${role}`) ? redirect : `/${role}`)
 }
 
 const pickAdvertiser = (a: Advertiser) => actAs('advertiser', { id: a.id, name: a.name })

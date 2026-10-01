@@ -37,7 +37,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const role = to.meta.role
   if (role && !useIdentityStore().get(role))
-    return { path: '/', query: { role } }
+    return { path: '/', query: { role, redirect: to.fullPath } }
 })
 
 export default router
