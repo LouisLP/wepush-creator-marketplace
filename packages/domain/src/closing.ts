@@ -1,10 +1,10 @@
 import type { LossReason } from './enums.ts'
-import type { BidOutcome, CampaignTerms, ClosingOutcome, Factor, PendingBid } from './types.ts'
+import type { BidOutcome, CampaignTerms, Cents, ClosingOutcome, Factor, PendingBid } from './types.ts'
 import { PLATFORM_BENCHMARKS } from './benchmarks.ts'
 import { weighFactors } from './factors.ts'
 import { meetsAudienceThresholds } from './matching.ts'
 import { clamp, round2 } from './math.ts'
-import { feeRange, isWithinFeeRange } from './pricing.ts'
+import { effectiveCpmCents, feeRange, isWithinFeeRange } from './pricing.ts'
 import { cents } from './types.ts'
 
 export const SCORING_VERSION = 'v1'
@@ -62,4 +62,23 @@ export function closeCampaign(campaign: CampaignTerms, bids: PendingBid[]): Clos
   })
 
   return { scoringVersion: SCORING_VERSION, spentCents: cents(campaign.budgetCents - remaining), outcomes }
+}
+
+export interface WinnersSummary {
+  spentCents: Cents
+  winners: number
+  estimatedImpressions: number
+  /** Spent per thousand of the Winners' Estimated Impressions; null with no Winners. */
+  blendedCpmCents: Cents | null
+}
+
+export function summarizeWinners(winners: readonly Pick<PendingBid, 'feeCents' | 'snapshot'>[]): WinnersSummary {
+  const spentCents = cents(winners.reduce((sum, w) => sum + w.feeCents, 0))
+  const estimatedImpressions = winners.reduce((sum, w) => sum + w.snapshot.estimatedImpressions, 0)
+  return {
+    spentCents,
+    winners: winners.length,
+    estimatedImpressions,
+    blendedCpmCents: estimatedImpressions ? effectiveCpmCents(spentCents, estimatedImpressions) : null,
+  }
 }

@@ -1,56 +1,125 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { formatCents, formatDateTime, formatPlatform, formatTimeLeft } from '@/lib/format.ts'
+import { getAdvertiserCampaign } from '@wepush/contracts'
+import { computed, onScopeDispose, watch } from 'vue'
+import { call } from '@/api'
+import BidsTable from '@/components/advertiser/BidsTable.vue'
+import OutcomeCard from '@/components/advertiser/OutcomeCard.vue'
+import { useRequest } from '@/composables/useRequest.ts'
+import { formatCents, formatCount, formatDateTime, formatPercent, formatPlatform, formatTimeLeft } from '@/lib/format.ts'
 import { useAdvertiserCampaignsStore } from '@/stores/advertiserCampaigns.ts'
 
 const props = defineProps<{ id: string }>()
 
+const CLOSING_POLL_MS = 5_000
+
+const review = useRequest(() => call(getAdvertiserCampaign, { params: { id: props.id } }))
+watch(() => props.id, () => void review.reload())
+const campaign = computed(() => review.data.value)
+
+// Past the deadline but not yet Closed: the worker is due to pick it up.
+const closingShortly = computed(() =>
+  campaign.value?.status === 'open' && new Date(campaign.value.biddingDeadline) <= new Date())
+
+let poll: ReturnType<typeof setInterval> | undefined
+watch(closingShortly, (waiting) => {
+  clearInterval(poll)
+  poll = waiting ? setInterval(() => void review.reload(), CLOSING_POLL_MS) : undefined
+})
+onScopeDispose(() => clearInterval(poll))
+
+// Keep the rail's Open/Closed sections in step once this page sees the Campaign close.
 const campaigns = useAdvertiserCampaignsStore()
-const campaign = computed(() => campaigns.byId(props.id))
+watch(campaign, (c) => {
+  const listed = c && campaigns.byId(c.id)
+  if (listed && listed.status !== c.status)
+    void campaigns.reload()
+})
+
+const statusLine = computed(() => {
+  const c = campaign.value
+  if (!c)
+    return ''
+  if (c.status === 'closed')
+    return 'Closed'
+  return closingShortly.value ? 'Bidding over · closing shortly' : `Open · ${formatTimeLeft(c.biddingDeadline)}`
+})
 </script>
 
 <template>
-  <p v-if="campaigns.error" class="alert" role="alert">
-    {{ campaigns.error }}
+  <p v-if="review.error.value" class="alert" role="alert">
+    {{ review.error.value }}
   </p>
-  <section v-else-if="campaign" class="page" aria-labelledby="campaign-heading">
-    <header>
+  <article v-else-if="campaign" class="page" aria-labelledby="campaign-heading">
+    <header class="head">
       <h1 id="campaign-heading">
         {{ campaign.title }}
       </h1>
       <p class="muted">
-        {{ formatPlatform(campaign.platform) }} · {{ campaign.status }}
+        {{ formatPlatform(campaign.requirements.platform) }} · <span class="status" role="status">{{ statusLine }}</span>
       </p>
     </header>
-    <dl class="card stats">
-      <div><dt>Budget</dt><dd>{{ formatCents(campaign.budgetCents) }}</dd></div>
-      <div v-if="campaign.spentCents !== null">
-        <dt>Spent</dt><dd>{{ formatCents(campaign.spentCents) }}</dd>
-      </div>
-      <div><dt>Bids</dt><dd>{{ campaign.bidCount }}</dd></div>
-      <div>
-        <dt>Bidding Deadline</dt>
-        <dd>
-          {{ formatDateTime(campaign.biddingDeadline) }}
-          <small v-if="campaign.status === 'open'" class="muted">({{ formatTimeLeft(campaign.biddingDeadline) }})</small>
-        </dd>
-      </div>
-    </dl>
-  </section>
-  <p v-else-if="campaigns.items" class="muted">
-    Campaign not found.
-  </p>
+
+    <OutcomeCard :campaign="campaign" />
+
+    <section class="card" aria-labelledby="bids-heading">
+      <h2 id="bids-heading">
+        Bids
+      </h2>
+      <p v-if="campaign.provisional && campaign.bids.length" class="muted">
+        Provisional Ranks — what Closing would decide if it ran now. Select a Rank to see why.
+      </p>
+      <BidsTable :bids="campaign.bids" :target-cpm-cents="campaign.targetCpmCents" :provisional="campaign.provisional" />
+    </section>
+
+    <section class="card" aria-labelledby="terms-heading">
+      <h2 id="terms-heading">
+        Terms
+      </h2>
+      <blockquote class="brief">
+        {{ campaign.brief }}
+      </blockquote>
+      <dl class="terms">
+        <div><dt>Budget</dt><dd>{{ formatCents(campaign.budgetCents) }}</dd></div>
+        <div><dt>Target CPM</dt><dd>{{ formatCents(campaign.targetCpmCents) }}</dd></div>
+        <div><dt>Bidding Deadline</dt><dd>{{ formatDateTime(campaign.biddingDeadline) }}</dd></div>
+        <div><dt>Platform</dt><dd>{{ formatPlatform(campaign.requirements.platform) }}</dd></div>
+        <div><dt>Categories</dt><dd>{{ campaign.requirements.categories.join(', ') }}</dd></div>
+        <div><dt>Min. followers</dt><dd>{{ formatCount(campaign.requirements.minFollowers) }}</dd></div>
+        <div>
+          <dt>Min. engagement</dt>
+          <dd>{{ campaign.requirements.minEngagementRate === null ? 'Any' : formatPercent(campaign.requirements.minEngagementRate) }}</dd>
+        </div>
+      </dl>
+    </section>
+  </article>
 </template>
 
 <style scoped>
-.page {
+.page,
+.head,
+.card {
   display: grid;
   gap: var(--space-md);
 }
 
-.stats {
+.head {
+  gap: var(--space-xs);
+}
+
+.card h2 {
+  font-size: var(--font-size-lg);
+}
+
+.brief {
+  margin: 0;
+  padding-inline-start: var(--space-md);
+  border-inline-start: 3px solid var(--color-border-default);
+  white-space: pre-line;
+}
+
+.terms {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: var(--space-md);
 }
 
@@ -60,7 +129,6 @@ dt {
 }
 
 dd {
-  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
 </style>

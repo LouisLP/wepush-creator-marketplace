@@ -1,6 +1,6 @@
 import type { BidId, BidSnapshot, CampaignId, CampaignTerms, CreatorId, PendingBid } from './types.ts'
 import { describe, expect, it } from 'vitest'
-import { closeCampaign, scoreBid, SCORING_VERSION } from './closing.ts'
+import { closeCampaign, scoreBid, SCORING_VERSION, summarizeWinners } from './closing.ts'
 import { cents } from './types.ts'
 
 // Fee Range on 10,000 impressions: [$10, $200] (3× Parity Fee $100 capped at the Budget)
@@ -101,5 +101,18 @@ describe('closeCampaign', () => {
 
   it('closes with no winners when there are no bids', () => {
     expect(closeCampaign(campaign, [])).toEqual({ scoringVersion: SCORING_VERSION, spentCents: 0, outcomes: [] })
+  })
+})
+
+describe('summarizeWinners', () => {
+  it('totals Fees and Estimated Impressions into a blended CPM', () => {
+    expect(summarizeWinners([
+      bid('a', { fee: 5_000, impressions: 10_000, cpm: 500 }),
+      bid('b', { fee: 10_000, impressions: 5_000, cpm: 2_000 }),
+    ])).toEqual({ spentCents: 15_000, winners: 2, estimatedImpressions: 15_000, blendedCpmCents: 1_000 })
+  })
+
+  it('has no blended CPM without Winners', () => {
+    expect(summarizeWinners([])).toEqual({ spentCents: 0, winners: 0, estimatedImpressions: 0, blendedCpmCents: null })
   })
 })

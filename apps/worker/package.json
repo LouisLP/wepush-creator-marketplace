@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
+  "exports": {
+    "./close-campaigns": "./src/close-campaigns.ts"
+  },
   "scripts": {
     "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",
     "start": "node src/main.ts"
