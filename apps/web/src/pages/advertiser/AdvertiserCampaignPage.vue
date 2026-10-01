@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getAdvertiserCampaign } from '@wepush/contracts'
-import { computed, onScopeDispose, watch } from 'vue'
+import { computed, onScopeDispose, shallowRef, watch } from 'vue'
 import { call } from '@/api'
 import BidsTable from '@/components/advertiser/BidsTable.vue'
 import OutcomeCard from '@/components/advertiser/OutcomeCard.vue'
@@ -10,22 +10,24 @@ import { useAdvertiserCampaignsStore } from '@/stores/advertiserCampaigns.ts'
 
 const props = defineProps<{ id: string }>()
 
-const CLOSING_POLL_MS = 5_000
+const TICK_MS = 5_000
 
 const review = useRequest(() => call(getAdvertiserCampaign, { params: { id: props.id } }))
 watch(() => props.id, () => void review.reload())
 const campaign = computed(() => review.data.value)
 
+const now = shallowRef(new Date())
+
 // Past the deadline but not yet Closed: the worker is due to pick it up.
 const closingShortly = computed(() =>
-  campaign.value?.status === 'open' && new Date(campaign.value.biddingDeadline) <= new Date())
+  campaign.value?.status === 'open' && new Date(campaign.value.biddingDeadline) <= now.value)
 
-let poll: ReturnType<typeof setInterval> | undefined
-watch(closingShortly, (waiting) => {
-  clearInterval(poll)
-  poll = waiting ? setInterval(() => void review.reload(), CLOSING_POLL_MS) : undefined
-})
-onScopeDispose(() => clearInterval(poll))
+const tick = setInterval(() => {
+  now.value = new Date()
+  if (closingShortly.value)
+    void review.reload()
+}, TICK_MS)
+onScopeDispose(() => clearInterval(tick))
 
 // Keep the rail's Open/Closed sections in step once this page sees the Campaign close.
 const campaigns = useAdvertiserCampaignsStore()
@@ -41,7 +43,7 @@ const statusLine = computed(() => {
     return ''
   if (c.status === 'closed')
     return 'Closed'
-  return closingShortly.value ? 'Bidding over · closing shortly' : `Open · ${formatTimeLeft(c.biddingDeadline)}`
+  return closingShortly.value ? 'Bidding over · closing shortly' : `Open · ${formatTimeLeft(c.biddingDeadline, now.value)}`
 })
 </script>
 

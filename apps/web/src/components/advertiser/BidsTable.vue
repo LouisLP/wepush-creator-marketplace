@@ -31,7 +31,10 @@ function outcomeLabel(b: AdvertiserBid) {
             Creator
           </th>
           <th scope="col">
-            Snapshot
+            Bid Snapshot
+          </th>
+          <th scope="col" class="num">
+            Est. Impressions
           </th>
           <th scope="col" class="num">
             Fee
@@ -65,8 +68,11 @@ function outcomeLabel(b: AdvertiserBid) {
             {{ b.handle }}<br><small class="muted">{{ b.category }}</small>
           </td>
           <td>
-            {{ formatCount(b.snapshot.followers) }} · {{ formatPercent(b.snapshot.engagementRate) }}<br>
-            <small class="muted">{{ formatCount(b.snapshot.estimatedImpressions) }} impr.</small>
+            {{ formatCount(b.snapshot.followers) }} followers<br>
+            <small class="muted">{{ formatPercent(b.snapshot.engagementRate) }} engagement</small>
+          </td>
+          <td class="num">
+            {{ formatCount(b.snapshot.estimatedImpressions) }}
           </td>
           <td class="num">
             {{ formatCents(b.feeCents) }}
@@ -83,7 +89,7 @@ function outcomeLabel(b: AdvertiserBid) {
           </td>
         </tr>
         <tr v-if="expanded === b.id" :id="`bid-${b.id}`" class="detail">
-          <td colspan="7">
+          <td colspan="8">
             <ScoreFactors :score="b.score" :factors="b.factors" />
             <dl>
               <div>

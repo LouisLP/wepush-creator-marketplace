@@ -42,7 +42,7 @@ const open: AdvertiserCampaign = {
   closedAt: null,
   provisional: true,
   scoringVersion: 'v1',
-  outcome: { spentCents: 13_000, winners: 2, estimatedImpressions: 20_000, blendedCpmCents: 650 },
+  outcome: { spentCents: 13_000, winnerCount: 2, estimatedImpressions: 20_000, blendedCpmCents: 650 },
   bids: [
     bid(1, '@cheap'),
     bid(2, '@mid', { feeCents: 8_000, remainingBudgetCents: 10_000 }),
@@ -85,7 +85,7 @@ describe('advertiser campaign page', () => {
     expect(fetch).toHaveBeenCalledWith(`/api/advertiser/campaigns/${ID}`, expect.anything())
     const outcome = wrapper.get('#outcome-heading').element.closest('section')!
     expect(outcome.textContent).toContain('If it closed now')
-    expect(outcome.textContent).toContain('Projected spend$130.00 of $150.00')
+    expect(outcome.textContent).toContain('Spent (projected)$130.00 of $150.00')
     expect(outcome.textContent).toContain('2 of 4 Bids')
     expect(outcome.textContent).toContain('$6.50 target $10.00')
     expect(wrapper.findAll('.segment').map(s => [s.text(), s.attributes('style')])).toEqual([
@@ -93,8 +93,8 @@ describe('advertiser campaign page', () => {
       ['#2', 'inline-size: 53.33%;'],
     ])
     expect(wrapper.findAll('.winners li').map(li => li.text())).toEqual([
-      '#1@cheap$50.00 · 10K impr. · eCPM $5.00',
-      '#2@mid$80.00 · 10K impr. · eCPM $5.00',
+      '#1@cheap$50.00 · 10K Est. Impressions · Effective CPM $5.00',
+      '#2@mid$80.00 · 10K Est. Impressions · Effective CPM $5.00',
     ])
     expect(wrapper.findAll('tbody tr').map(tr => tr.text())).toEqual([
       expect.stringContaining('Would win'),
@@ -133,6 +133,19 @@ describe('advertiser campaign page', () => {
       expect.stringContaining('Lost'),
       expect.stringContaining('Lost'),
     ])
+  })
+
+  it('switches to closing shortly when the deadline passes while the page is open', async () => {
+    vi.setSystemTime(new Date('2026-01-01T23:59:58Z'))
+    const fetch = stubApi(open)
+    const wrapper = await mountPage()
+    expect(wrapper.get('[role="status"]').text()).toBe('Open · 1m left')
+
+    await vi.advanceTimersByTimeAsync(5_000)
+    await flushPromises()
+
+    expect(wrapper.get('[role="status"]').text()).toBe('Bidding over · closing shortly')
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 
   it('says closing shortly past the deadline, and picks up the Winners once Closed', async () => {

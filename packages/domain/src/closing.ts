@@ -64,20 +64,19 @@ export function closeCampaign(campaign: CampaignTerms, bids: PendingBid[]): Clos
   return { scoringVersion: SCORING_VERSION, spentCents: cents(campaign.budgetCents - remaining), outcomes }
 }
 
-export interface WinnersSummary {
+export interface OutcomeSummary {
   spentCents: Cents
-  winners: number
+  winnerCount: number
   estimatedImpressions: number
   /** Spent per thousand of the Winners' Estimated Impressions; null with no Winners. */
   blendedCpmCents: Cents | null
 }
 
-export function summarizeWinners(winners: readonly Pick<PendingBid, 'feeCents' | 'snapshot'>[]): WinnersSummary {
-  const spentCents = cents(winners.reduce((sum, w) => sum + w.feeCents, 0))
+export function summarizeOutcome(spentCents: Cents, winners: readonly Pick<PendingBid, 'snapshot'>[]): OutcomeSummary {
   const estimatedImpressions = winners.reduce((sum, w) => sum + w.snapshot.estimatedImpressions, 0)
   return {
     spentCents,
-    winners: winners.length,
+    winnerCount: winners.length,
     estimatedImpressions,
     blendedCpmCents: estimatedImpressions ? effectiveCpmCents(spentCents, estimatedImpressions) : null,
   }

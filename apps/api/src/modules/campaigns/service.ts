@@ -1,7 +1,7 @@
 import type { CampaignBid, NewCampaign } from '@wepush/db'
 import type { AdvertiserId, CampaignId, DeadlineError, ProposedTerms } from '@wepush/domain'
 import type { AppDeps } from '../../app.ts'
-import { CAMPAIGN_LIMITS, checkBiddingDeadline, closeCampaign, previewCampaign, summarizeWinners } from '@wepush/domain'
+import { CAMPAIGN_LIMITS, checkBiddingDeadline, closeCampaign, previewCampaign, summarizeOutcome } from '@wepush/domain'
 import { AppError } from '../../errors.ts'
 
 function deadlineError(error: DeadlineError, now: Date): AppError {
@@ -37,8 +37,8 @@ export function createAdvertiserCampaignService({ repos, clock }: Pick<AppDeps, 
         throw new AppError('not_found', 'Campaign not found')
 
       const bids = await repos.bids.listForCampaign(campaignId)
-      const { scoringVersion, outcomes } = campaign.outcome
-        ? { scoringVersion: campaign.outcome.scoringVersion, outcomes: bids.map(recordedOutcome) }
+      const { scoringVersion, spentCents, outcomes } = campaign.outcome
+        ? { ...campaign.outcome, outcomes: bids.map(recordedOutcome) }
         : closeCampaign(campaign.terms, bids.map(b => b.bid))
 
       const byId = new Map(bids.map(b => [b.bid.id, b]))
@@ -51,7 +51,7 @@ export function createAdvertiserCampaignService({ repos, clock }: Pick<AppDeps, 
         provisional: !campaign.outcome,
         scoringVersion,
         bids: ranked,
-        summary: summarizeWinners(ranked.filter(r => r.outcome.status === 'won').map(r => r.bid)),
+        outcome: summarizeOutcome(spentCents, ranked.filter(r => r.outcome.status === 'won').map(r => r.bid)),
       }
     },
   }

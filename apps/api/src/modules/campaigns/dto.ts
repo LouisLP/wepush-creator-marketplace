@@ -53,7 +53,7 @@ export function toCreatorCampaign(a: AssessedCampaign & Pick<CreatorCampaign, 'r
   }
 }
 
-export function toAdvertiserCampaign({ campaign: c, provisional, scoringVersion, bids, summary }: CampaignReview): AdvertiserCampaign {
+export function toAdvertiserCampaign({ campaign: c, provisional, scoringVersion, bids, outcome }: CampaignReview): AdvertiserCampaign {
   return {
     id: c.id,
     title: c.title,
@@ -67,7 +67,7 @@ export function toAdvertiserCampaign({ campaign: c, provisional, scoringVersion,
     closedAt: c.outcome?.closedAt.toISOString() ?? null,
     provisional,
     scoringVersion,
-    outcome: summary,
+    outcome,
     bids: bids.map(({ bid, handle, category, outcome: o }): AdvertiserBid => ({
       id: bid.id,
       handle,

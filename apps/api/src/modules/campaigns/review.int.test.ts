@@ -69,7 +69,7 @@ describe('advertiser campaign review', () => {
       closedAt: null,
       provisional: true,
       scoringVersion: SCORING_VERSION,
-      outcome: { spentCents: 13_000, winners: 2, estimatedImpressions: 20_000, blendedCpmCents: 650 },
+      outcome: { spentCents: 13_000, winnerCount: 2, estimatedImpressions: 20_000, blendedCpmCents: 650 },
     })
     expect(standings(body)).toEqual([
       [1, '@cheap', 'won', null, 15_000],
@@ -118,7 +118,7 @@ describe('advertiser campaign review', () => {
 
     expect((await get(campaign.id)).json()).toMatchObject({
       bids: [],
-      outcome: { spentCents: 0, winners: 0, estimatedImpressions: 0, blendedCpmCents: null },
+      outcome: { spentCents: 0, winnerCount: 0, estimatedImpressions: 0, blendedCpmCents: null },
     })
   })
 

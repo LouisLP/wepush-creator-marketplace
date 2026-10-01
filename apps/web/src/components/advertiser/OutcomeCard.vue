@@ -27,12 +27,12 @@ const share = (cents: number) => `${(100 * cents / props.campaign.budgetCents).t
 
     <dl class="stats">
       <div>
-        <dt>{{ campaign.provisional ? 'Projected spend' : 'Spent' }}</dt>
+        <dt>{{ campaign.provisional ? 'Spent (projected)' : 'Spent' }}</dt>
         <dd>{{ formatCents(campaign.outcome.spentCents) }} <small class="muted">of {{ formatCents(campaign.budgetCents) }}</small></dd>
       </div>
       <div>
         <dt>Winners</dt>
-        <dd>{{ campaign.outcome.winners }} <small class="muted">of {{ campaign.bids.length }} Bids</small></dd>
+        <dd>{{ campaign.outcome.winnerCount }} <small class="muted">of {{ campaign.bids.length }} Bids</small></dd>
       </div>
       <div>
         <dt>Est. Impressions</dt>
@@ -68,7 +68,7 @@ const share = (cents: number) => `${(100 * cents / props.campaign.budgetCents).t
       <li v-for="w in winners" :key="w.id">
         <span class="rank">#{{ w.rank }}</span>
         <strong>{{ w.handle }}</strong>
-        <span class="muted">{{ formatCents(w.feeCents) }} · {{ formatCount(w.snapshot.estimatedImpressions) }} impr. · eCPM {{ formatCents(w.snapshot.effectiveCpmCents) }}</span>
+        <span class="muted">{{ formatCents(w.feeCents) }} · {{ formatCount(w.snapshot.estimatedImpressions) }} Est. Impressions · Effective CPM {{ formatCents(w.snapshot.effectiveCpmCents) }}</span>
       </li>
     </ol>
   </section>

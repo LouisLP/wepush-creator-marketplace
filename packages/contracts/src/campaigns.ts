@@ -1,9 +1,8 @@
-import type { RelevanceFactorKey, ScoreFactorKey } from '@wepush/domain'
 import { CAMPAIGN_LIMITS, RELEVANCE_WEIGHTS, SCORE_WEIGHTS } from '@wepush/domain'
 import { z } from 'zod'
 import { defineEndpoint } from './endpoint.ts'
 import { RequirementCheckSchema } from './errors.ts'
-import { CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema, PlatformSchema } from './primitives.ts'
+import { BidStatusSchema, CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema, PlatformSchema } from './primitives.ts'
 
 export { CAMPAIGN_LIMITS, PLATFORM_BENCHMARKS } from '@wepush/domain'
 
@@ -70,14 +69,16 @@ export const RequirementsSchema = z.object({
 })
 export type Requirements = z.infer<typeof RequirementsSchema>
 
-const RELEVANCE_FACTOR_KEYS = Object.keys(RELEVANCE_WEIGHTS) as [RelevanceFactorKey, ...RelevanceFactorKey[]]
+function factorSchema<K extends string>(weights: Record<K, number>) {
+  return z.object({
+    key: z.enum(Object.keys(weights) as [K, ...K[]]),
+    value: z.number().min(0).max(1),
+    weight: z.number(),
+    contribution: z.number(),
+  })
+}
 
-export const RelevanceFactorSchema = z.object({
-  key: z.enum(RELEVANCE_FACTOR_KEYS),
-  value: z.number().min(0).max(1),
-  weight: z.number(),
-  contribution: z.number(),
-})
+export const RelevanceFactorSchema = factorSchema(RELEVANCE_WEIGHTS)
 export type RelevanceFactor = z.infer<typeof RelevanceFactorSchema>
 
 export const RelevanceSchema = z.object({
@@ -152,14 +153,7 @@ export const previewCampaign = defineEndpoint({
   response: CampaignPreviewSchema,
 })
 
-const SCORE_FACTOR_KEYS = Object.keys(SCORE_WEIGHTS) as [ScoreFactorKey, ...ScoreFactorKey[]]
-
-export const ScoreFactorSchema = z.object({
-  key: z.enum(SCORE_FACTOR_KEYS),
-  value: z.number().min(0).max(1),
-  weight: z.number(),
-  contribution: z.number(),
-})
+export const ScoreFactorSchema = factorSchema(SCORE_WEIGHTS)
 export type ScoreFactor = z.infer<typeof ScoreFactorSchema>
 
 const CentsOrZeroSchema = z.int().nonnegative().max(Number.MAX_SAFE_INTEGER)
@@ -179,7 +173,7 @@ export const AdvertiserBidSchema = z.object({
   rank: z.int().positive(),
   score: z.number().min(0).max(100),
   factors: z.array(ScoreFactorSchema),
-  status: z.enum(['won', 'lost']),
+  status: BidStatusSchema.exclude(['pending']),
   lossReason: LossReasonSchema.nullable(),
   remainingBudgetCents: CentsOrZeroSchema.nullable(),
 })
@@ -187,7 +181,7 @@ export type AdvertiserBid = z.infer<typeof AdvertiserBidSchema>
 
 export const CampaignOutcomeSchema = z.object({
   spentCents: CentsOrZeroSchema,
-  winners: z.int().nonnegative(),
+  winnerCount: z.int().nonnegative(),
   estimatedImpressions: z.int().nonnegative(),
   blendedCpmCents: CentsOrZeroSchema.nullable(),
 })
