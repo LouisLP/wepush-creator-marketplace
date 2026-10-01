@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppThemeToggle from '@/components/kit/AppThemeToggle.vue'
 import { useIdentityStore } from '@/stores/identity.ts'
 
 const route = useRoute()
@@ -27,6 +28,7 @@ function switchIdentity() {
       <button class="btn btn-ghost" @click="switchIdentity">
         Switch
       </button>
+      <AppThemeToggle />
     </header>
     <main class="content">
       <RouterView />

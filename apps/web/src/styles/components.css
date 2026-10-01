@@ -25,6 +25,22 @@
   cursor: not-allowed;
 }
 
+.btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Subtle pair: on-accent ink fails AA on solid seiji in the light theme */
+.btn-secondary {
+  border-color: var(--color-secondary-border);
+  background-color: var(--color-secondary-subtle-bg);
+  color: var(--color-secondary-subtle-fg);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-bg-surface-hover);
+}
+
 .btn-ghost {
   border-color: var(--color-border-default);
   background-color: transparent;
