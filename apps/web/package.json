@@ -12,10 +12,12 @@
   "dependencies": {
     "@wepush/contracts": "workspace:*",
     "pinia": "^4.0.3",
+    "reka-ui": "^2.10.5",
     "vue": "^3.5.42",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
+    "@iconify-json/lucide": "^1.2.138",
     "@tsconfig/node24": "^24.0.5",
     "@types/node": "^24.13.4",
     "@vitejs/plugin-vue": "^6.0.8",
@@ -23,6 +25,7 @@
     "@vue/tsconfig": "^0.9.1",
     "happy-dom": "^20.14.5",
     "typescript": "~6.0.3",
+    "unplugin-icons": "^24.0.0",
     "vite": "^8.2.2",
     "vue-tsc": "^3.3.11"
   }

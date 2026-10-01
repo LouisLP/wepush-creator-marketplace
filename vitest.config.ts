@@ -1,5 +1,3 @@
-import { fileURLToPath, URL } from 'node:url'
-import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -29,14 +27,12 @@ export default defineConfig({
         },
       },
       {
-        plugins: [vue()],
-        resolve: {
-          alias: { '@': fileURLToPath(new URL('./apps/web/src', import.meta.url)) },
-        },
+        extends: './apps/web/vite.config.ts',
+        root: './apps/web',
         test: {
           name: 'web',
           environment: 'happy-dom',
-          include: ['apps/web/src/**/*.test.ts'],
+          include: ['src/**/*.test.ts'],
         },
       },
     ],

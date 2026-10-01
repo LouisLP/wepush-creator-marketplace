@@ -76,6 +76,24 @@
   --aka-950: oklch(20% 0.066 27);
 
   /* ------------------------------------------------------------------ */
+  /* Color — ki (mustard; warning)                                      */
+  /*                                                                     */
+  /* Warning gets its own hue for the same reason aka exists: an orange  */
+  /* badge would read as kaki, i.e. something you can press.             */
+  /* ------------------------------------------------------------------ */
+  --ki-50: oklch(97% 0.03 90);
+  --ki-100: oklch(93% 0.06 90);
+  --ki-200: oklch(88% 0.1 88);
+  --ki-300: oklch(82% 0.13 87);
+  --ki-400: oklch(76% 0.145 85);
+  --ki-500: oklch(70% 0.145 83);
+  --ki-600: oklch(60% 0.13 80);
+  --ki-700: oklch(50% 0.11 78);
+  --ki-800: oklch(41% 0.09 76);
+  --ki-900: oklch(32% 0.07 74);
+  --ki-950: oklch(23% 0.05 72);
+
+  /* ------------------------------------------------------------------ */
   /* Typography                                                          */
   /* ------------------------------------------------------------------ */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;

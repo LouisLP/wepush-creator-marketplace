@@ -5,6 +5,15 @@
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WePush</title>
+    <script>
+      (() => {
+        let theme
+        try { theme = localStorage.getItem('wepush.theme') } catch {}
+        if (theme !== 'light' && theme !== 'dark')
+          theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

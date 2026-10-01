@@ -78,8 +78,10 @@ The counts and licences come from each package's `info.json`. Lucide is ISC with
 
 ```ts
 import Icons from 'unplugin-icons/vite'
-// ...
-plugins: [vue(), Icons({ compiler: 'vue3', scale: 1.25 })],
+
+export default defineConfig({
+  plugins: [vue(), Icons({ compiler: 'vue3', scale: 1.25 })],
+})
 ```
 
 `apps/web/src/components/kit/AppDialog.vue`:
@@ -95,14 +97,22 @@ const open = defineModel<boolean>('open', { default: false })
 
 <template>
   <DialogRoot v-model:open="open">
-    <DialogTrigger as-child><slot name="trigger" /></DialogTrigger>
+    <DialogTrigger as-child>
+      <slot name="trigger" />
+    </DialogTrigger>
     <DialogPortal>
       <DialogOverlay class="overlay" />
       <DialogContent class="content">
-        <DialogTitle class="title">{{ title }}</DialogTitle>
-        <DialogDescription class="desc">{{ description }}</DialogDescription>
+        <DialogTitle class="title">
+          {{ title }}
+        </DialogTitle>
+        <DialogDescription class="desc">
+          {{ description }}
+        </DialogDescription>
         <slot :close="() => (open = false)" />
-        <DialogClose class="close" aria-label="Close"><IconX aria-hidden="true" /></DialogClose>
+        <DialogClose class="close" aria-label="Close">
+          <IconX aria-hidden="true" />
+        </DialogClose>
       </DialogContent>
     </DialogPortal>
   </DialogRoot>
@@ -151,6 +161,7 @@ Icon usage (theme switcher, one icon per theme):
 import IconMoon from '~icons/lucide/moon'
 import IconSun from '~icons/lucide/sun'
 import IconSunMoon from '~icons/lucide/sun-moon'
+
 const icons = { dark: IconMoon, light: IconSun, auto: IconSunMoon } as const
 const theme = defineModel<keyof typeof icons>({ required: true })
 </script>
@@ -170,7 +181,9 @@ import { DialogContent } from 'reka-ui'
 import { afterEach, expect, it } from 'vitest'
 import AppDialog from './AppDialog.vue'
 
-afterEach(() => { document.body.innerHTML = '' })
+afterEach(() => {
+  document.body.innerHTML = ''
+})
 
 it('opens from the trigger and renders in a portal', async () => {
   const wrapper = mount(AppDialog, {

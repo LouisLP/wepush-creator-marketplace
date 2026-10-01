@@ -13,20 +13,16 @@
  * seiji for secondary ones — not accent-plus-status. Primary vs. secondary is
  * a hue choice, not a weight choice: buttons/badges of both render at the same
  * size, radius, and prominence. `success` borrows the seiji hue, it doesn't
- * own it.
+ * own it; `danger` owns aka and `warning` owns ki.
  */
 
-/* Dark is the default theme. Opt into light or OS-preference explicitly. */
+/* Dark is the default theme; data-theme is set before paint (index.html). */
 :root {
   color-scheme: dark;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-}
-
-:root[data-theme='auto'] {
-  color-scheme: light dark;
 }
 
 :root {
@@ -82,6 +78,7 @@
   --color-success-default: light-dark(var(--seiji-600), var(--seiji-500));
   --color-success-subtle-bg: light-dark(var(--seiji-50), var(--seiji-950));
   --color-success-subtle-fg: light-dark(var(--seiji-800), var(--seiji-300));
+  --color-success-border: light-dark(var(--seiji-300), var(--seiji-700));
 
   /* Danger owns aka outright — nothing interactive uses that hue, so red in
      the UI always means a failure and never a button you could press. */
@@ -89,6 +86,12 @@
   --color-danger-border: light-dark(var(--aka-300), var(--aka-800));
   --color-danger-subtle-bg: light-dark(var(--aka-50), var(--aka-950));
   --color-danger-subtle-fg: light-dark(var(--aka-800), var(--aka-300));
+
+  /* Warning owns ki: attention soon or worse value, never a failure */
+  --color-warning-default: light-dark(var(--ki-700), var(--ki-400));
+  --color-warning-border: light-dark(var(--ki-300), var(--ki-800));
+  --color-warning-subtle-bg: light-dark(var(--ki-50), var(--ki-950));
+  --color-warning-subtle-fg: light-dark(var(--ki-800), var(--ki-300));
 
   /* ------------------------------------------------------------------ */
   /* Brand band + inverse surface — the footer: a full-bleed kaki band   */
@@ -118,6 +121,9 @@
   --shadow-sm: 0 1px 2px var(--shadow-color);
   --shadow-md: 0 2px 8px var(--shadow-color);
   --shadow-lg: 0 8px 24px var(--shadow-color);
+
+  /* Backdrop behind modal dialogs */
+  --color-bg-scrim: light-dark(oklch(20% 0.02 250 / 0.4), oklch(5% 0.01 250 / 0.7));
 
   /* ------------------------------------------------------------------ */
   /* Focus                                                               */
