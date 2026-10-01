@@ -75,12 +75,12 @@ All of these live in the root `.env`, and every process validates them at startu
 
 | Act as | What to look at |
 |---|---|
-| Glow Cosmetics | *Summer glow launch* closed with Winners and `over_budget` Losers, plus the nano account @tinyglam.tess winning cheaply at the $10 Fee floor. *Lip tint drop* closes 5 minutes after seeding |
+| Glow Cosmetics | *Summer glow launch* closed with Winners and `over_budget` Losers, plus the nano Creator @tinyglam.tess, whose Parity Fee is under the $10 Fee floor, winning the leftover Budget. *Lip tint drop* closes 5 minutes after seeding |
 | Fuel Fitness | *Protein bar taste test* closed, with @coreandcoffee losing `over_budget`. *Shaker bottle giveaway* closes 15 minutes after seeding. *Ambassador programme* is niche: only @plantpowerpri qualifies |
 | Pixel Forge | *Closed beta keys* closed with no Bids, so no Winners |
-| @glowbyana | A big TikTok beauty account that matches several Glow Campaigns |
+| @glowbyana | A big TikTok beauty Creator matching both Open Glow Campaigns |
 | @coreandcoffee | Just under the *Ambassador programme* minimum engagement rate, so it doesn't match |
-| @lagfreeluna / @runwithraf | Engagement far above or below baseline: the Impressions lift clamps at 2× and 0.5× |
+| @lagfreeluna / @runwithraf | Engagement far above or below baseline: Estimated Impressions hit the engagement clamp at 2× and 0.5× |
 | @wanderwithwen | No Matched Campaigns |
 
 The closing-soon Campaigns only demo well within a few minutes of seeding.

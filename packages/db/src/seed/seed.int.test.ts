@@ -1,9 +1,9 @@
 import type { CampaignId, Cents } from '@wepush/domain'
 import { checkRequirements, feeRange, isWithinFeeRange } from '@wepush/domain'
-import { asc, eq } from 'drizzle-orm'
+import { asc } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { advertisers, bids, campaigns, creators } from '../schema/index.ts'
-import { createTestContext, insertCreator } from '../testing/index.ts'
+import { advertisers, creators } from '../schema/index.ts'
+import { createTestContext, insertCreator, listBids, listCampaigns } from '../testing/index.ts'
 import { seed } from './seed.ts'
 
 const ctx = createTestContext()
@@ -16,8 +16,8 @@ async function dump() {
   return {
     advertisers: await ctx.db.select().from(advertisers).orderBy(asc(advertisers.id)),
     creators: await ctx.db.select().from(creators).orderBy(asc(creators.id)),
-    campaigns: await ctx.db.select().from(campaigns).orderBy(asc(campaigns.id)),
-    bids: await ctx.db.select().from(bids).orderBy(asc(bids.id)),
+    campaigns: await listCampaigns(ctx.db),
+    bids: await listBids(ctx.db),
   }
 }
 
@@ -39,20 +39,15 @@ describe('seed', () => {
   it('only seeds Bids that pass the Requirements and Fee bounds checks', async () => {
     await seed(ctx.db, { now })
 
-    const rows = await ctx.db.select().from(bids).innerJoin(campaigns, eq(bids.campaignId, campaigns.id)).innerJoin(creators, eq(bids.creatorId, creators.id))
+    const seeded = await listBids(ctx.db)
 
-    expect(rows.length).toBeGreaterThan(0)
-    for (const { bids: bid, campaigns: campaign, creators: creator } of rows) {
-      const terms = {
-        id: campaign.id as CampaignId,
-        requirements: { platform: campaign.platform, categories: campaign.categories, minFollowers: campaign.minFollowers, minEngagementRate: campaign.minEngagementRate },
-        budgetCents: campaign.budgetCents as Cents,
-        targetCpmCents: campaign.targetCpmCents as Cents,
-        biddingDeadline: campaign.biddingDeadline,
-      }
-      expect(checkRequirements({ ...creator, ...bid }, terms.requirements).every(c => c.passed)).toBe(true)
+    expect(seeded.length).toBeGreaterThan(0)
+    for (const bid of seeded) {
+      const { terms } = (await ctx.repos.campaigns.getById(bid.campaignId as CampaignId))!
+      const { profile } = (await ctx.repos.creators.getById(bid.creatorId))!
+      expect(checkRequirements(profile, terms.requirements).every(c => c.passed)).toBe(true)
       expect(isWithinFeeRange(bid.feeCents as Cents, feeRange(bid.estimatedImpressions, terms))).toBe(true)
-      expect(bid.placedAt < campaign.biddingDeadline).toBe(true)
+      expect(bid.placedAt < terms.biddingDeadline).toBe(true)
     }
   })
 

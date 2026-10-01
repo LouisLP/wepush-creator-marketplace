@@ -1,23 +1,21 @@
 import type { CampaignId, CampaignTerms } from '@wepush/domain'
 import type { Db } from '../client.ts'
 import process from 'node:process'
-import { cents, checkBidPlacement, estimateImpressions } from '@wepush/domain'
+import { cents, checkBidPlacement, estimateImpressions, parityFeeCents } from '@wepush/domain'
 import { sql } from 'drizzle-orm'
 import { createDb } from '../client.ts'
 import { loadConfig } from '../config.ts'
 import { advertisers, bids, campaigns, creators } from '../schema/index.ts'
-import { ACCOUNTS_CREATED_AT, ADVERTISERS, CAMPAIGNS, CREATORS } from './fixtures.ts'
-
-type Rows = ReturnType<typeof buildSeed>
+import { ADVERTISERS, CAMPAIGNS, CAST_CREATED_AT, CREATORS } from './fixtures.ts'
 
 const ID_PREFIX = { advertiser: 'a', creator: 'c', campaign: 'e', bid: 'b' } as const
 
-export function seedId(kind: keyof typeof ID_PREFIX, n: number) {
+function seedId(kind: keyof typeof ID_PREFIX, n: number) {
   return `01900000-0000-7000-8000-${ID_PREFIX[kind]}${String(n).padStart(11, '0')}`
 }
 
 /** Builds every row from the fixtures; throws if a fixture Bid would be refused by the API. */
-export function buildSeed(now: Date) {
+function buildSeed(now: Date) {
   const at = (offset: number) => new Date(now.getTime() + offset)
   const stamps = (offset: number) => ({ createdAt: at(offset), updatedAt: at(offset) })
 
@@ -31,8 +29,8 @@ export function buildSeed(now: Date) {
     return value
   }
 
-  const advertiserRows = ADVERTISERS.map(a => ({ id: lookup(advertiserIds, a.key), name: a.name, ...stamps(ACCOUNTS_CREATED_AT) }))
-  const creatorRows = CREATORS.map(({ handle, ...profile }) => ({ id: lookup(creatorIds, handle), handle, ...profile, ...stamps(ACCOUNTS_CREATED_AT) }))
+  const advertiserRows = ADVERTISERS.map(a => ({ id: lookup(advertiserIds, a.key), name: a.name, ...stamps(CAST_CREATED_AT) }))
+  const creatorRows = CREATORS.map(({ handle, ...profile }) => ({ id: lookup(creatorIds, handle), handle, ...profile, ...stamps(CAST_CREATED_AT) }))
   const campaignRows: (typeof campaigns.$inferInsert)[] = []
   const bidRows: (typeof bids.$inferInsert)[] = []
 
@@ -63,7 +61,7 @@ export function buildSeed(now: Date) {
       if (b.placedAt <= c.createdAt)
         throw new Error(`Seed Bid ${b.creator} on ${c.key} is placed before the Campaign exists`)
 
-      const feeCents = cents(Math.round(c.targetCpmCents * estimateImpressions(creator) / 1000 * b.m))
+      const feeCents = cents(Math.round(parityFeeCents(estimateImpressions(creator), terms.targetCpmCents) * b.m))
       const placed = checkBidPlacement({
         creator,
         campaign: { status: 'open', terms },
@@ -90,13 +88,20 @@ export function buildSeed(now: Date) {
   return { advertisers: advertiserRows, creators: creatorRows, campaigns: campaignRows, bids: bidRows }
 }
 
+export interface SeedCounts {
+  advertisers: number
+  creators: number
+  campaigns: number
+  bids: number
+}
+
 export interface SeedOptions {
   now?: Date
   env?: NodeJS.ProcessEnv
 }
 
 /** Wipes all marketplace data and reinserts the demo fixtures in one transaction. */
-export async function seed(db: Db, { now = new Date(), env = process.env }: SeedOptions = {}): Promise<Rows> {
+export async function seed(db: Db, { now = new Date(), env = process.env }: SeedOptions = {}): Promise<SeedCounts> {
   if (env.NODE_ENV === 'production')
     throw new Error('Refusing to seed: NODE_ENV=production')
 
@@ -108,14 +113,14 @@ export async function seed(db: Db, { now = new Date(), env = process.env }: Seed
     await tx.insert(campaigns).values(rows.campaigns)
     await tx.insert(bids).values(rows.bids)
   })
-  return rows
+  return { advertisers: rows.advertisers.length, creators: rows.creators.length, campaigns: rows.campaigns.length, bids: rows.bids.length }
 }
 
 if (import.meta.main) {
   const { db, pool } = createDb(loadConfig().databaseUrl, { max: 1 })
   try {
-    const rows = await seed(db)
-    console.log(`Seeded ${rows.advertisers.length} advertisers, ${rows.creators.length} creators, ${rows.campaigns.length} campaigns, ${rows.bids.length} bids`)
+    const counts = await seed(db)
+    console.log(`Seeded ${counts.advertisers} advertisers, ${counts.creators} creators, ${counts.campaigns} campaigns, ${counts.bids} bids`)
   }
   catch (error) {
     console.error(error instanceof Error ? error.message : error)

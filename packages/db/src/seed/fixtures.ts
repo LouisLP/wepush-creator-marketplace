@@ -1,6 +1,6 @@
 import type { Category, CreatorProfile, Platform } from '@wepush/domain'
 
-// Hand-authored demo cast. Times are offsets in ms from `now`; Fee = round(Target CPM × Estimated Impressions / 1000 × m).
+// Hand-authored demo cast. Times are offsets in ms from `now`; a Bid's Fee is `m` × its Parity Fee.
 
 export const MINUTE = 60_000
 export const HOUR = 60 * MINUTE
@@ -37,7 +37,7 @@ export interface CampaignFixture {
   bids: BidFixture[]
 }
 
-export const ACCOUNTS_CREATED_AT = -30 * DAY
+export const CAST_CREATED_AT = -30 * DAY
 
 export const ADVERTISERS: AdvertiserFixture[] = [
   { key: 'glow', name: 'Glow Cosmetics' },
@@ -55,7 +55,7 @@ export const CREATORS: CreatorFixture[] = [
   { handle: '@lagfreeluna', platform: 'tiktok', category: 'gaming', followers: 85_000, engagementRate: 0.12 },
   { handle: '@wanderwithwen', platform: 'tiktok', category: 'travel', followers: 47_000, engagementRate: 0.049 },
   { handle: '@liftwithleo', platform: 'instagram', category: 'fitness', followers: 75_000, engagementRate: 0.041 },
-  { handle: '@coreandcoffee', platform: 'instagram', category: 'fitness', followers: 650_000, engagementRate: 0.022 },
+  { handle: '@coreandcoffee', platform: 'instagram', category: 'fitness', followers: 650_000, engagementRate: 0.024 },
   { handle: '@runwithraf', platform: 'instagram', category: 'fitness', followers: 30_000, engagementRate: 0.009 },
   { handle: '@plantpowerpri', platform: 'instagram', category: 'food', followers: 220_000, engagementRate: 0.028 },
   { handle: '@mia.cooks', platform: 'instagram', category: 'food', followers: 120_000, engagementRate: 0.024 },
@@ -81,10 +81,9 @@ export const CAMPAIGNS: CampaignFixture[] = [
     bids: [
       { creator: '@glowbyana', m: 1.2, placedAt: -7 * DAY },
       { creator: '@dewydaily', m: 0.9, placedAt: -6 * DAY - 4 * HOUR },
-      { creator: '@thriftqueen', m: 1.1, placedAt: -5 * DAY },
+      { creator: '@thriftqueen', m: 1.3, placedAt: -5 * DAY },
       { creator: '@slowmornings.zoe', m: 1.6, placedAt: -3 * DAY - 2 * HOUR },
-      // Nano account: the $10 Fee floor is ~2.4× its parity Fee, so its Effective CPM can't compete.
-      { creator: '@tinyglam.tess', m: 2.4, placedAt: -2 * DAY },
+      { creator: '@tinyglam.tess', m: 1.96, placedAt: -2 * DAY },
     ],
   },
   {
@@ -139,7 +138,6 @@ export const CAMPAIGNS: CampaignFixture[] = [
       { creator: '@plantpowerpri', m: 0.8, placedAt: -8 * DAY },
       { creator: '@liftwithleo', m: 1.0, placedAt: -6 * DAY },
       { creator: '@mia.cooks', m: 1.8, placedAt: -4 * DAY },
-      // Engagement far under baseline: the Impressions lift clamps at 0.5×.
       { creator: '@runwithraf', m: 0.7, placedAt: -3 * DAY },
     ],
   },
@@ -169,7 +167,6 @@ export const CAMPAIGNS: CampaignFixture[] = [
     platform: 'instagram',
     categories: ['fitness', 'food'],
     minFollowers: 100_000,
-    // @coreandcoffee sits just under this.
     minEngagementRate: 0.025,
     budgetCents: 1_000_000,
     targetCpmCents: 1_800,
