@@ -2,7 +2,7 @@ import type { BidId, BidOutcome, BidSnapshot, CampaignId, Cents, CreatorId, Pend
 import type { DbExecutor } from '../client.ts'
 import { and, asc, desc, eq } from 'drizzle-orm'
 import { translatingDbErrors } from '../errors.ts'
-import { bids, campaigns } from '../schema/index.ts'
+import { bids, campaigns, creators } from '../schema/index.ts'
 
 type Row = typeof bids.$inferSelect
 
@@ -21,20 +21,27 @@ function toPendingBid(row: Row): PendingBid {
   }
 }
 
+/** The outcome recorded at Closing; null while Pending. */
+function toRecordedOutcome(row: Row): BidOutcome | null {
+  if (row.status === 'pending')
+    return null
+  return {
+    bidId: row.id as BidId,
+    score: row.score!,
+    rank: row.rank!,
+    status: row.status,
+    lossReason: row.lossReason,
+    remainingBudgetCents: row.remainingBudgetCents as Cents | null,
+    factors: row.scoreFactors!,
+  }
+}
+
 function toBid(row: Row) {
   return {
     ...toPendingBid(row),
     campaignId: row.campaignId as CampaignId,
     status: row.status,
-    outcome: row.status === 'pending'
-      ? null
-      : {
-          score: row.score!,
-          rank: row.rank!,
-          lossReason: row.lossReason,
-          remainingBudgetCents: row.remainingBudgetCents as Cents | null,
-          factors: row.scoreFactors!,
-        },
+    outcome: toRecordedOutcome(row),
   }
 }
 export type Bid = ReturnType<typeof toBid>
@@ -53,6 +60,21 @@ export function createBidRepo(exec: DbExecutor) {
     async listPending(campaignId: CampaignId) {
       const rows = await exec.select().from(bids).where(and(eq(bids.campaignId, campaignId), eq(bids.status, 'pending'))).orderBy(asc(bids.placedAt), asc(bids.id))
       return rows.map(toPendingBid)
+    },
+
+    /** Every Bid on a Campaign with its Creator's handle and Category, and any recorded outcome. */
+    async listForCampaign(campaignId: CampaignId) {
+      const rows = await exec.select({ bid: bids, handle: creators.handle, category: creators.category })
+        .from(bids)
+        .innerJoin(creators, eq(creators.id, bids.creatorId))
+        .where(eq(bids.campaignId, campaignId))
+        .orderBy(asc(bids.placedAt), asc(bids.id))
+      return rows.map(({ bid, handle, category }) => ({
+        bid: toPendingBid(bid),
+        handle,
+        category,
+        recorded: toRecordedOutcome(bid),
+      }))
     },
 
     async findByCampaignAndCreator(campaignId: CampaignId, creatorId: CreatorId) {
@@ -87,3 +109,4 @@ export function createBidRepo(exec: DbExecutor) {
   }
 }
 export type BidRepo = ReturnType<typeof createBidRepo>
+export type CampaignBid = Awaited<ReturnType<BidRepo['listForCampaign']>>[number]

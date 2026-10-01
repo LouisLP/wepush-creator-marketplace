@@ -1,9 +1,10 @@
+import type { CampaignId } from '@wepush/domain'
 import type { FastifyPluginAsync } from 'fastify'
 import type { AppDeps } from '../../app.ts'
-import { createCampaign, listAdvertiserCampaigns, previewCampaign } from '@wepush/contracts'
+import { createCampaign, getAdvertiserCampaign, listAdvertiserCampaigns, previewCampaign } from '@wepush/contracts'
 import { route } from '../../http/route.ts'
 import { advertiserIdOf } from '../../plugins/actor.ts'
-import { toAdvertiserCampaignSummary, toProposedTerms } from './dto.ts'
+import { toAdvertiserCampaign, toAdvertiserCampaignSummary, toProposedTerms } from './dto.ts'
 import { createAdvertiserCampaignService } from './service.ts'
 
 export function advertiserCampaignRoutes(deps: AppDeps): FastifyPluginAsync {
@@ -27,5 +28,8 @@ export function advertiserCampaignRoutes(deps: AppDeps): FastifyPluginAsync {
     })
 
     route(app, previewCampaign, async req => service.preview(toProposedTerms(req.body)))
+
+    route(app, getAdvertiserCampaign, async req =>
+      toAdvertiserCampaign(await service.review(advertiserIdOf(req), req.params.id as CampaignId)))
   }
 }

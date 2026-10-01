@@ -1,9 +1,9 @@
 import { CAMPAIGN_LIMITS, RELEVANCE_WEIGHTS } from '@wepush/domain'
 import { z } from 'zod'
-import { CreatorBidSchema } from './bids.ts'
+import { CreatorBidSchema, ScoreFactorSchema } from './bids.ts'
 import { defineEndpoint } from './endpoint.ts'
 import { RequirementCheckSchema } from './errors.ts'
-import { CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, factorSchema, IdSchema, IsoDateTimeSchema, listOf, PlatformSchema } from './primitives.ts'
+import { BidStatusSchema, CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, factorSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema, PlatformSchema } from './primitives.ts'
 
 export { CAMPAIGN_LIMITS, PLATFORM_BENCHMARKS } from '@wepush/domain'
 
@@ -143,4 +143,62 @@ export const previewCampaign = defineEndpoint({
   path: '/api/advertiser/campaigns/preview',
   body: CampaignPreviewBodySchema,
   response: CampaignPreviewSchema,
+})
+
+const CentsOrZeroSchema = z.int().nonnegative().max(Number.MAX_SAFE_INTEGER)
+
+export const AdvertiserBidSchema = z.object({
+  id: IdSchema,
+  handle: z.string(),
+  category: CategorySchema,
+  feeCents: CentsSchema,
+  placedAt: IsoDateTimeSchema,
+  snapshot: z.object({
+    followers: z.int().nonnegative(),
+    engagementRate: EngagementRateSchema,
+    estimatedImpressions: z.int().positive(),
+    effectiveCpmCents: CentsSchema,
+  }),
+  rank: z.int().positive(),
+  score: z.number().min(0).max(100),
+  factors: z.array(ScoreFactorSchema),
+  status: BidStatusSchema.exclude(['pending']),
+  lossReason: LossReasonSchema.nullable(),
+  remainingBudgetCents: CentsOrZeroSchema.nullable(),
+})
+export type AdvertiserBid = z.infer<typeof AdvertiserBidSchema>
+
+export const CampaignOutcomeSchema = z.object({
+  spentCents: CentsOrZeroSchema,
+  winnerCount: z.int().nonnegative(),
+  estimatedImpressions: z.int().nonnegative(),
+  blendedCpmCents: CentsOrZeroSchema.nullable(),
+})
+export type CampaignOutcome = z.infer<typeof CampaignOutcomeSchema>
+
+export const AdvertiserCampaignSchema = z.object({
+  id: IdSchema,
+  title: z.string(),
+  brief: z.string(),
+  status: CampaignStatusSchema,
+  requirements: RequirementsSchema,
+  budgetCents: CentsSchema,
+  targetCpmCents: CentsSchema,
+  biddingDeadline: IsoDateTimeSchema,
+  createdAt: IsoDateTimeSchema,
+  closedAt: IsoDateTimeSchema.nullable(),
+  /** True while Open: Bids and outcome are what Closing would decide if it ran now. */
+  provisional: z.boolean(),
+  scoringVersion: z.string(),
+  outcome: CampaignOutcomeSchema,
+  /** In Rank order. */
+  bids: z.array(AdvertiserBidSchema),
+})
+export type AdvertiserCampaign = z.infer<typeof AdvertiserCampaignSchema>
+
+export const getAdvertiserCampaign = defineEndpoint({
+  method: 'GET',
+  path: '/api/advertiser/campaigns/:id',
+  params: z.object({ id: IdSchema }),
+  response: AdvertiserCampaignSchema,
 })

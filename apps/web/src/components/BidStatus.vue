@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { CreatorBid, CreatorCampaign, LossReason, ScoreFactor } from '@wepush/contracts'
+import type { CreatorBid, CreatorCampaign, LossReason } from '@wepush/contracts'
 import { formatCents, formatCount, formatDateTime, formatPercent, formatTimeLeft, formatVsTarget } from '@/lib/format.ts'
-import FactorBars from './FactorBars.vue'
+import ScoreFactors from './ScoreFactors.vue'
 
 defineProps<{ bid: CreatorBid, campaign: CreatorCampaign }>()
 
@@ -11,11 +11,6 @@ const LOSS_COPY: Record<LossReason, string> = {
   requirements_not_met: 'Your profile at the time you bid didn’t meet the Requirements.',
   fee_out_of_range: 'Your Fee was outside the Fee Range.',
   over_budget: 'Your Fee didn’t fit the Remaining Budget.',
-}
-
-const SCORE_COPY: Record<ScoreFactor['key'], { label: string, hint: string }> = {
-  cpm_fit: { label: 'CPM fit', hint: 'Your Effective CPM against the Target CPM; lower scores higher' },
-  engagement: { label: 'Engagement', hint: 'Your engagement rate when you bid, against the Platform baseline' },
 }
 </script>
 
@@ -58,11 +53,12 @@ const SCORE_COPY: Record<ScoreFactor['key'], { label: string, hint: string }> = 
       <div><dt>Placed</dt><dd>{{ formatDateTime(bid.placedAt) }}</dd></div>
     </dl>
 
-    <FactorBars v-if="bid.outcome" label="Score" :total="bid.outcome.score" :factors="bid.outcome.factors" :copy="SCORE_COPY">
+    <template v-if="bid.outcome">
+      <ScoreFactors :score="bid.outcome.score" :factors="bid.outcome.factors" />
       <small class="muted">
         Scoring Version {{ bid.outcome.scoringVersion }}. Rank puts Eligible Bids first, then higher Score, lower Fee, earlier Bid.
       </small>
-    </FactorBars>
+    </template>
   </div>
 </template>
 

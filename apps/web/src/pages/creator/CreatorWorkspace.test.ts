@@ -280,7 +280,7 @@ describe('tracking a Bid', () => {
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Outcome')
     expect(wrapper.get('.badge').text()).toBe('Lost · Rank #2')
     expect(wrapper.get('.loss').text()).toBe('Your Fee didn’t fit the Remaining Budget. $40.00 was left when your Bid was reached; you asked $60.00.')
-    expect(wrapper.text()).toContain('Score 53')
+    expect(wrapper.text()).toContain('Score 52.5')
     expect(wrapper.text()).toContain('Scoring Version v1')
     expect(wrapper.findAll('meter')).toHaveLength(4)
   })

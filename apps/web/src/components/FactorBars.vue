@@ -1,23 +1,18 @@
 <script setup lang="ts" generic="K extends string">
-export interface FactorRow<K extends string> {
-  key: K
-  value: number
-  weight: number
-  contribution: number
-}
+export interface FactorCopy { label: string, hint: string }
 
 defineProps<{
   label: string
-  total: number
-  factors: FactorRow<K>[]
-  copy: Record<K, { label: string, hint: string }>
+  value: number
+  factors: { key: K, value: number, weight: number, contribution: number }[]
+  copy: Record<K, FactorCopy>
 }>()
 </script>
 
 <template>
   <figure class="factors">
     <figcaption>
-      {{ label }} <strong>{{ Math.round(total) }}</strong><span class="muted"> / 100</span>
+      {{ label }} <strong>{{ value }}</strong><span class="muted"> / 100</span>
     </figcaption>
     <div v-for="f in factors" :key="f.key" class="row">
       <span class="label">
@@ -28,7 +23,6 @@ defineProps<{
       <span class="points">+{{ Math.round(f.contribution) }}</span>
       <small class="hint muted">{{ copy[f.key].hint }}</small>
     </div>
-    <slot />
   </figure>
 </template>
 
