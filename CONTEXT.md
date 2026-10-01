@@ -79,12 +79,20 @@ The flat amount a Creator asks, in a Bid, to make one Post.
 _Avoid_: Price, rate, quote, amount
 
 **Estimated Impressions**:
-The number of views the system expects a Creator's Post to get, derived from the Creator's profile.
+The number of views the system expects a Creator's Post to get, derived from the Creator's profile: followers × Reach Rate × (engagement rate ÷ Baseline Engagement Rate, clamped to 0.5–2.0), rounded, at least 1. Category plays no part.
 _Avoid_: Reach, views, expected views
 
 **Effective CPM**:
-A Bid's Fee expressed as cost per thousand Estimated Impressions; how a Bid is compared to the Target CPM.
+A Bid's Fee expressed as cost per thousand Estimated Impressions; how a Bid is compared to the Target CPM. Fee × 1000 ÷ Estimated Impressions, rounded to the cent.
 _Avoid_: Bid CPM, actual CPM
+
+**Reach Rate**:
+The share of a Creator's followers expected to view one Post, fixed per Platform (Instagram 10%, TikTok 15%).
+_Avoid_: View rate, reach
+
+**Baseline Engagement Rate**:
+The typical Creator engagement rate on a Platform (Instagram 2%, TikTok 5%); a Creator above it gets more Estimated Impressions, below it fewer.
+_Avoid_: Average ER, benchmark ER
 
 **Target CPM**:
 The cost per thousand impressions an Advertiser aims to pay on a Campaign.
