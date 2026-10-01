@@ -34,7 +34,7 @@ function detail(b: MyBid) {
     </p>
     <ul v-else class="items">
       <li v-for="b in bids.data.value?.items" :key="b.id">
-        <RouterLink :to="{ name: 'creator-campaign', params: { id: b.campaignId } }" class="item">
+        <RouterLink :to="{ name: 'creator-campaign', params: { campaignId: b.campaignId } }" class="item">
           <span class="dot" :class="b.status" aria-hidden="true" />
           <span class="body">
             <strong>{{ b.campaignTitle }}</strong>

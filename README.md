@@ -37,7 +37,7 @@ pnpm dev        # postgres up → migrate → api + worker + web
 pnpm db:seed    # optional, in another terminal: wipes the database and loads the demo data (see below)
 ```
 
-Then open http://localhost:5173. You'll get a role picker; choose (or create) an Advertiser or a Creator to act as. There's no authentication. The API's dev OpenAPI UI is at http://localhost:5173/api/docs.
+Then open http://localhost:5173. You land on the Advertisers hub; the navbar switches to the Creators hub. Open (or create) an Advertiser or Creator to act as them. There's no authentication. The API's dev OpenAPI UI is at http://localhost:5173/api/docs.
 
 ### Production images locally
 

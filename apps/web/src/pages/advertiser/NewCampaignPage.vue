@@ -9,7 +9,7 @@ const campaigns = useAdvertiserCampaignsStore()
 
 async function onCreated(campaign: AdvertiserCampaignSummary) {
   await campaigns.reload()
-  await router.push({ name: 'advertiser-campaign', params: { id: campaign.id } })
+  await router.push({ name: 'advertiser-campaign', params: { campaignId: campaign.id } })
 }
 </script>
 

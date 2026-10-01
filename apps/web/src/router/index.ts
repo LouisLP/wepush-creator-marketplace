@@ -1,67 +1,66 @@
+import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import type { Role } from '@/api/client.ts'
 import { createRouter, createWebHistory } from 'vue-router'
-import { useIdentityStore } from '@/stores/identity.ts'
 
 declare module 'vue-router' {
   interface RouteMeta {
     role?: Role
+    crumb?: string
   }
+}
+
+export const ACTOR_PARAM = { advertiser: 'advertiserId', creator: 'creatorId' } as const satisfies Record<Role, string>
+
+export function actorIdIn(route: RouteLocationNormalizedLoaded, role: Role): string | undefined {
+  const id = route.params[ACTOR_PARAM[role]]
+  return typeof id === 'string' ? id : undefined
 }
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', name: 'picker', component: () => import('@/pages/RolePickerPage.vue') },
     {
-      path: '/advertiser',
+      path: '/',
       component: () => import('@/components/AppShell.vue'),
-      meta: { role: 'advertiser' },
       children: [
+        { path: '', redirect: '/advertisers' },
+        { path: 'advertisers', name: 'advertisers', component: () => import('@/pages/advertiser/AdvertiserHubPage.vue') },
         {
-          path: '',
-          component: () => import('@/pages/advertiser/AdvertiserCampaignsLayout.vue'),
+          path: 'advertisers/:advertiserId',
+          component: () => import('@/components/ActorWorkspace.vue'),
+          meta: { role: 'advertiser' },
           children: [
-            { path: '', name: 'advertiser-home', component: () => import('@/pages/advertiser/AdvertiserHomePage.vue') },
-            { path: 'campaigns/new', name: 'advertiser-campaign-new', component: () => import('@/pages/advertiser/NewCampaignPage.vue') },
-            { path: 'campaigns/:id', name: 'advertiser-campaign', component: () => import('@/pages/advertiser/AdvertiserCampaignPage.vue'), props: true },
+            {
+              path: '',
+              component: () => import('@/pages/advertiser/AdvertiserCampaignsLayout.vue'),
+              children: [
+                { path: '', name: 'advertiser-home', component: () => import('@/pages/advertiser/AdvertiserHomePage.vue') },
+                { path: 'campaigns/new', name: 'advertiser-campaign-new', component: () => import('@/pages/advertiser/NewCampaignPage.vue'), meta: { crumb: 'New Campaign' } },
+                { path: 'campaigns/:campaignId', name: 'advertiser-campaign', component: () => import('@/pages/advertiser/AdvertiserCampaignPage.vue'), props: route => ({ id: route.params.campaignId }), meta: { crumb: 'Campaign' } },
+              ],
+            },
+          ],
+        },
+        { path: 'creators', name: 'creators', component: () => import('@/pages/creator/CreatorHubPage.vue') },
+        {
+          path: 'creators/:creatorId',
+          component: () => import('@/components/ActorWorkspace.vue'),
+          meta: { role: 'creator' },
+          children: [
+            {
+              path: '',
+              component: () => import('@/pages/creator/CreatorWorkspace.vue'),
+              children: [
+                { path: '', name: 'creator-home', component: () => import('@/pages/creator/CreatorHomePage.vue') },
+                { path: 'campaigns/:campaignId', name: 'creator-campaign', component: () => import('@/pages/creator/CampaignReviewPage.vue'), props: route => ({ id: route.params.campaignId }), meta: { crumb: 'Campaign' } },
+              ],
+            },
           ],
         },
       ],
     },
-    {
-      path: '/creator',
-      component: () => import('@/components/AppShell.vue'),
-      meta: { role: 'creator' },
-      children: [
-        {
-          path: '',
-          component: () => import('@/pages/creator/CreatorWorkspace.vue'),
-          children: [
-            { path: '', name: 'creator-home', component: () => import('@/pages/creator/CreatorHomePage.vue') },
-            { path: 'campaigns/:id', name: 'creator-campaign', component: () => import('@/pages/creator/CampaignReviewPage.vue'), props: true },
-          ],
-        },
-      ],
-    },
-    { path: '/:pathMatch(.*)*', redirect: '/' },
+    { path: '/:pathMatch(.*)*', redirect: '/advertisers' },
   ],
 })
-
-router.beforeEach((to) => {
-  const role = to.meta.role
-  if (role && !useIdentityStore().get(role))
-    return pickerFor(role, to.fullPath)
-})
-
-export function pickerFor(role: Role, redirect?: string) {
-  return { path: '/', query: redirect ? { role, redirect } : { role } }
-}
-
-/** Where to land after picking `role`: the requested page if it belongs to that role, else its home. */
-export function landingFor(role: Role, redirect: unknown): string {
-  const home = `/${role}`
-  const ownsPath = typeof redirect === 'string' && redirect.startsWith(home) && /^(?:$|[/?#])/.test(redirect.slice(home.length))
-  return ownsPath ? redirect : home
-}
 
 export default router

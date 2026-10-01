@@ -11,7 +11,7 @@ export function messageFor({ problem }: ApiError): string {
     case 'validation_failed': return 'Some fields need fixing.'
     case 'bad_request': return 'That request couldn’t be understood.'
     case 'actor_required':
-    case 'unknown_actor': return 'Pick who you’re acting as to continue.'
+    case 'unknown_actor': return 'We couldn’t find that Advertiser or Creator.'
     case 'not_found': return 'We couldn’t find that.'
     case 'campaign_closed': return 'This campaign is closed.'
     case 'deadline_passed': return 'The bidding deadline has passed.'

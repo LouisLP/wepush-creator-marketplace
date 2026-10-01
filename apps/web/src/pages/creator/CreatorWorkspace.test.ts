@@ -3,11 +3,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import router from '@/router'
-import { useIdentityStore } from '@/stores/identity.ts'
 import CampaignReviewPage from './CampaignReviewPage.vue'
 import CreatorWorkspace from './CreatorWorkspace.vue'
 
 const ID = '01900000-0000-7000-8000-000000000001'
+const CREATOR_ID = '01900000-0000-7000-8000-0000000000c1'
 const BID_ID = '01900000-0000-7000-8000-0000000000b1'
 const relevance = {
   value: 75,
@@ -103,10 +103,10 @@ function stubApi({ detail = review, place = () => Response.json(pendingBid, { st
   return fetch
 }
 
-function mountWith(component: object, props: Record<string, unknown> = {}) {
+async function mountWith(component: object, props: Record<string, unknown> = {}) {
   const pinia = createPinia()
   setActivePinia(pinia)
-  useIdentityStore().set('creator', { id: '01900000-0000-7000-8000-0000000000c1', name: '@mia.cooks' })
+  await router.push(`/creators/${CREATOR_ID}`)
   return mount(component, { props, global: { plugins: [pinia, router], stubs: { RouterView: true } } })
 }
 
@@ -123,33 +123,33 @@ afterEach(() => {
 describe('creator rail', () => {
   it('shows Relevance, title, Suggested Fee and time left, linking to the review pane', async () => {
     stubApi()
-    const wrapper = mountWith(CreatorWorkspace)
+    const wrapper = await mountWith(CreatorWorkspace)
     await flushPromises()
 
     const item = wrapper.get('nav[aria-labelledby="matched-heading"] li')
     expect(item.text()).toContain('75')
     expect(item.text()).toContain('Snack launch')
     expect(item.text()).toContain('$75.00 suggested · 3d left')
-    expect(item.get('a').attributes('href')).toBe(`/creator/campaigns/${ID}`)
+    expect(item.get('a').attributes('href')).toBe(`/creators/${CREATOR_ID}/campaigns/${ID}`)
   })
 
   it('lists My Bids with a status dot, Fee and Rank or time left', async () => {
     stubApi()
-    const wrapper = mountWith(CreatorWorkspace)
+    const wrapper = await mountWith(CreatorWorkspace)
     await flushPromises()
 
     const items = wrapper.findAll('nav[aria-labelledby="my-bids-heading"] li')
     expect(items.map(li => li.get('.dot').classes())).toEqual([['dot', 'lost'], ['dot', 'pending']])
     expect(items[0]!.text()).toContain('$60.00 · Lost · Rank #2')
     expect(items[1]!.text()).toContain('$90.00 · 3h left')
-    expect(items[0]!.get('a').attributes('href')).toBe(`/creator/campaigns/${ID}`)
+    expect(items[0]!.get('a').attributes('href')).toBe(`/creators/${CREATOR_ID}/campaigns/${ID}`)
   })
 
   it('refreshes My Bids once a Pending Bid’s deadline passes', async () => {
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
     vi.setSystemTime(new Date('2026-01-01T14:59:58Z'))
     const fetch = stubApi()
-    const wrapper = mountWith(CreatorWorkspace)
+    const wrapper = await mountWith(CreatorWorkspace)
     await flushPromises()
     const bidsCalls = () => fetch.mock.calls.filter(([url]) => url === '/api/creator/bids').length
 
@@ -168,7 +168,7 @@ describe('creator rail', () => {
 describe('campaign review pane', () => {
   it('shows the Fee Quote, every Requirement checked and the Relevance factors', async () => {
     const fetch = stubApi()
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     expect(fetch).toHaveBeenCalledWith(`/api/creator/campaigns/${ID}`, expect.anything())
@@ -184,7 +184,7 @@ describe('campaign review pane', () => {
 
   it('shows not-found when the Campaign isn’t visible', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => problem(404, 'not_found')))
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('We couldn’t find that.')
@@ -194,7 +194,7 @@ describe('campaign review pane', () => {
 describe('placing a Bid', () => {
   async function mountComposer(stub?: Stub) {
     const fetch = stubApi(stub)
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
     return { fetch, wrapper, fee: wrapper.get('input[name="fee"]') }
   }
@@ -260,7 +260,7 @@ describe('placing a Bid', () => {
 describe('tracking a Bid', () => {
   it('shows a Pending Bid with Fee, Effective CPM vs Target, Snapshot and closes-at', async () => {
     stubApi({ detail: { ...review, bid: pendingBid } })
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Track')
@@ -274,7 +274,7 @@ describe('tracking a Bid', () => {
 
   it('shows a Lost outcome with Rank, Score factors and the over-budget Loss Reason', async () => {
     stubApi({ detail: { ...review, status: 'closed', bid: lostBid } })
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     expect(wrapper.get('[aria-current="step"]').text()).toContain('Outcome')
@@ -289,7 +289,7 @@ describe('tracking a Bid', () => {
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
     vi.setSystemTime(new Date('2026-01-04T11:59:58Z'))
     const fetch = stubApi({ detail: { ...review, bid: pendingBid } })
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     await vi.advanceTimersByTimeAsync(5_000)
@@ -305,7 +305,7 @@ describe('tracking a Bid', () => {
   it('shows a Won outcome', async () => {
     const won: CreatorBid = { ...lostBid, status: 'won', outcome: { ...lostBid.outcome!, rank: 1, lossReason: null, remainingBudgetCents: 10_000 } }
     stubApi({ detail: { ...review, status: 'closed', bid: won } })
-    const wrapper = mountWith(CampaignReviewPage, { id: ID })
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     expect(wrapper.get('.badge').text()).toBe('Won · Rank #1')

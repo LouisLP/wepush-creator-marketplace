@@ -3,19 +3,29 @@ import { listAdvertiserCampaigns } from '@wepush/contracts'
 import { defineStore } from 'pinia'
 import { computed, shallowRef } from 'vue'
 import { call, errorMessage } from '@/api'
+import router, { actorIdIn } from '@/router'
 
 /** The acting Advertiser's Campaigns, shared by the rail and the Campaign pages. */
 export const useAdvertiserCampaignsStore = defineStore('advertiserCampaigns', () => {
   const items = shallowRef<AdvertiserCampaignSummary[]>()
   const error = shallowRef<string>()
+  let loadedFor: string | undefined
 
   async function reload() {
+    const advertiserId = actorIdIn(router.currentRoute.value, 'advertiser')
+    if (advertiserId !== loadedFor) {
+      items.value = undefined
+      loadedFor = advertiserId
+    }
     error.value = undefined
     try {
-      items.value = (await call(listAdvertiserCampaigns)).items
+      const { items: next } = await call(listAdvertiserCampaigns)
+      if (advertiserId === loadedFor)
+        items.value = next
     }
     catch (e) {
-      error.value = errorMessage(e)
+      if (advertiserId === loadedFor)
+        error.value = errorMessage(e)
     }
   }
 
