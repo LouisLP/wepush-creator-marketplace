@@ -25,7 +25,14 @@ const router = createRouter({
       component: () => import('@/components/AppShell.vue'),
       meta: { role: 'creator' },
       children: [
-        { path: '', name: 'creator-home', component: () => import('@/pages/creator/CreatorHomePage.vue') },
+        {
+          path: '',
+          component: () => import('@/pages/creator/CreatorWorkspace.vue'),
+          children: [
+            { path: '', name: 'creator-home', component: () => import('@/pages/creator/CreatorHomePage.vue') },
+            { path: 'campaigns/:id', name: 'creator-campaign', component: () => import('@/pages/creator/CampaignReviewPage.vue'), props: true },
+          ],
+        },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -35,7 +42,18 @@ const router = createRouter({
 router.beforeEach((to) => {
   const role = to.meta.role
   if (role && !useIdentityStore().get(role))
-    return { path: '/', query: { role } }
+    return pickerFor(role, to.fullPath)
 })
+
+export function pickerFor(role: Role, redirect?: string) {
+  return { path: '/', query: redirect ? { role, redirect } : { role } }
+}
+
+/** Where to land after picking `role`: the requested page if it belongs to that role, else its home. */
+export function landingFor(role: Role, redirect: unknown): string {
+  const home = `/${role}`
+  const ownsPath = typeof redirect === 'string' && redirect.startsWith(home) && /^(?:$|[/?#])/.test(redirect.slice(home.length))
+  return ownsPath ? redirect : home
+}
 
 export default router

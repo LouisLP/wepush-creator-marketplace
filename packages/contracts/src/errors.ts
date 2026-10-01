@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { CategorySchema, PlatformSchema } from './primitives.ts'
 
 const ProblemBaseSchema = z.object({
   type: z.literal('about:blank'),
@@ -10,12 +11,17 @@ const ProblemBaseSchema = z.object({
 
 const problem = <C extends string>(code: C) => ProblemBaseSchema.extend({ code: z.literal(code) })
 
-export const RequirementCheckSchema = z.object({
-  requirement: z.enum(['platform', 'category', 'minFollowers', 'minEngagement']),
-  passed: z.boolean(),
-  actual: z.union([z.string(), z.number(), z.null()]),
-  required: z.union([z.string(), z.number(), z.array(z.string()), z.null()]),
-})
+function check<R extends string, A extends z.ZodType, Q extends z.ZodType>(requirement: R, actual: A, required: Q) {
+  return z.object({ requirement: z.literal(requirement), passed: z.boolean(), actual, required })
+}
+
+export const RequirementCheckSchema = z.discriminatedUnion('requirement', [
+  check('platform', PlatformSchema, PlatformSchema),
+  check('category', CategorySchema, z.array(CategorySchema)),
+  check('minFollowers', z.number(), z.number()),
+  check('minEngagement', z.number(), z.number().nullable()),
+])
+export type RequirementCheck = z.infer<typeof RequirementCheckSchema>
 
 export const ProblemSchema = z.discriminatedUnion('code', [
   problem('validation_failed').extend({
