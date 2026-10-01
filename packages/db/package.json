@@ -1,0 +1,25 @@
+{
+  "name": "@wepush/db",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "node --env-file-if-exists=../../.env src/migrate.ts",
+    "seed": "node --env-file-if-exists=../../.env src/seed.ts"
+  },
+  "dependencies": {
+    "@wepush/domain": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "pg": "^8.16.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.0",
+    "drizzle-kit": "^0.31.11"
+  }
+}

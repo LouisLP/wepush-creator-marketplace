@@ -1,0 +1,13 @@
+{
+  "name": "@wepush/contracts",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@wepush/domain": "workspace:*",
+    "zod": "^4.6.5"
+  }
+}

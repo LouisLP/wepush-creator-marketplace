@@ -14,6 +14,10 @@ _Avoid_: Brand, client, buyer
 A person with exactly one self-reported social profile on one Platform, described by Category, follower count and engagement rate. Someone active on two Platforms is two Creators.
 _Avoid_: Influencer, profile, account, seller
 
+**Handle**:
+The name a Creator goes by on their Platform, e.g. `@mia.cooks`; unique across Creators.
+_Avoid_: Username, name, slug
+
 **Platform**:
 The social network a Creator publishes on — TikTok or Instagram.
 _Avoid_: Network, channel, social
