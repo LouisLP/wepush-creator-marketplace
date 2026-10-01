@@ -1,15 +1,10 @@
 <script setup lang="ts">
 // PROTOTYPE (#52) — navbar per #49: logo → home, hub links, spacer, theme toggle.
 import { Icon } from '@iconify/vue'
-import { ref } from 'vue'
+import AppThemeToggle from '@/components/kit/AppThemeToggle.vue'
 import { useProtoState } from './state.ts'
 
 const { hub, to } = useProtoState()
-const dark = ref(document.documentElement.dataset.theme !== 'light')
-function toggleTheme() {
-  dark.value = !dark.value
-  document.documentElement.dataset.theme = dark.value ? 'dark' : 'light'
-}
 </script>
 
 <template>
@@ -26,9 +21,7 @@ function toggleTheme() {
         <Icon icon="lucide:clapperboard" aria-hidden="true" /><span class="lbl">Creators</span>
       </RouterLink>
     </nav>
-    <button type="button" class="p-iconbtn theme" :aria-label="dark ? 'Switch to light theme' : 'Switch to dark theme'" @click="toggleTheme">
-      <Icon :icon="dark ? 'lucide:moon' : 'lucide:sun'" width="20" />
-    </button>
+    <AppThemeToggle class="theme" />
   </header>
 </template>
 

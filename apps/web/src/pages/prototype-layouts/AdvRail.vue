@@ -2,6 +2,8 @@
 // PROTOTYPE (#52) — Advertiser Campaign rail. A: stacked Open/Closed · B: segmented toggle · C: one-line compact rows.
 import { Icon } from '@iconify/vue'
 import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import AppButton from '@/components/kit/AppButton.vue'
 import { advCampaigns, deadlineState, outcome, platformIcon, platformLabel, usdShort } from './fixtures.ts'
 import PBadge from './PBadge.vue'
 import { useProtoState } from './state.ts'
@@ -16,9 +18,9 @@ const groups = computed(() => (variant.value === 'B' ? [{ key: tab.value, items:
 
 <template>
   <nav class="p-stack rail" aria-label="Campaigns">
-    <RouterLink :to="to({ c: 'new' })" class="btn">
+    <AppButton :as="RouterLink" :to="to({ c: 'new' })">
       <Icon icon="lucide:plus" aria-hidden="true" /> New Campaign
-    </RouterLink>
+    </AppButton>
     <div v-if="variant === 'B'" class="p-seg" role="group" aria-label="Filter">
       <button type="button" :aria-pressed="tab === 'open'" @click="tab = 'open'">
         Open {{ open.length }}

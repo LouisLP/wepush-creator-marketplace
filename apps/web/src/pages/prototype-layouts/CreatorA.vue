@@ -2,6 +2,7 @@
 // PROTOTYPE (#52) — Creator Campaign, variant A "Glance + disclosures": action card first, fit as one row of chips, the rest collapsed.
 import type { CreatorCampaign } from './fixtures.ts'
 import { Icon } from '@iconify/vue'
+import AppCollapsible from '@/components/kit/AppCollapsible.vue'
 import { deadlineState, platformIcon, platformLabel, step, usd, usdShort, when } from './fixtures.ts'
 import PBadge from './PBadge.vue'
 import PCreatorAction from './PCreatorAction.vue'
@@ -38,30 +39,26 @@ defineProps<{ c: CreatorCampaign }>()
       </span>
     </p>
 
-    <details class="p-disclosure">
-      <summary><Icon icon="lucide:chevron-right" class="p-chev" aria-hidden="true" /> Brief <span class="p-sum-meta muted p-small p-clamp">{{ c.brief }}</span></summary>
-      <div class="p-body">
-        <p>{{ c.brief }}</p>
-      </div>
-    </details>
-    <details class="p-disclosure">
-      <summary>
-        <Icon icon="lucide:chevron-right" class="p-chev" aria-hidden="true" /> {{ c.bid?.scoreFactors ? 'Why this Score' : 'Why this Relevance' }}
+    <AppCollapsible title="Brief" class="p-collapse">
+      <template #summary>
+        <span class="p-sum-meta muted p-small p-clamp">{{ c.brief }}</span>
+      </template>
+      <p>{{ c.brief }}</p>
+    </AppCollapsible>
+    <AppCollapsible :title="c.bid?.scoreFactors ? 'Why this Score' : 'Why this Relevance'" class="p-collapse">
+      <template #summary>
         <span class="p-sum-meta muted p-small">{{ c.bid?.score ?? c.relevance }}</span>
-      </summary>
-      <div class="p-body">
-        <PFactors :factors="c.bid?.scoreFactors ?? c.relevanceFactors" />
-      </div>
-    </details>
-    <details class="p-disclosure">
-      <summary>
-        <Icon icon="lucide:chevron-right" class="p-chev" aria-hidden="true" /> Terms
+      </template>
+      <PFactors :factors="c.bid?.scoreFactors ?? c.relevanceFactors" />
+    </AppCollapsible>
+    <AppCollapsible title="Terms" class="p-collapse">
+      <template #summary>
         <span class="p-sum-meta muted p-small p-num">{{ usdShort(c.budgetCents) }} · {{ usd(c.targetCpmCents) }} CPM</span>
-      </summary>
-      <div class="p-body p-small">
+      </template>
+      <p class="p-small">
         Budget {{ usdShort(c.budgetCents) }} · Target CPM {{ usd(c.targetCpmCents) }} · Deadline {{ when(c.deadline) }} · 1 Post · Categories {{ c.categories.join(', ') }}
-      </div>
-    </details>
+      </p>
+    </AppCollapsible>
   </article>
 </template>
 
@@ -71,5 +68,5 @@ defineProps<{ c: CreatorCampaign }>()
 h2 { font-size: var(--font-size-lg); }
 .fit { gap: var(--space-md); }
 .check { display: inline-flex; align-items: center; gap: 0.2em; }
-summary .p-clamp { -webkit-line-clamp: 1; max-inline-size: 40ch; }
+.p-clamp { -webkit-line-clamp: 1; max-inline-size: 40ch; }
 </style>

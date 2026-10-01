@@ -3,6 +3,7 @@
 import type { AdvCampaign } from './fixtures.ts'
 import { Icon } from '@iconify/vue'
 import { computed, ref } from 'vue'
+import AppCollapsible from '@/components/kit/AppCollapsible.vue'
 import { count, deadlineState, outcome, pct, platformIcon, platformLabel, usd, usdShort, vsTarget, when } from './fixtures.ts'
 import PBadge from './PBadge.vue'
 import PFactors from './PFactors.vue'
@@ -102,12 +103,11 @@ const share = (cents: number) => `${(cents / props.c.budgetCents) * 100}%`
       </table>
     </section>
 
-    <details class="p-disclosure">
-      <summary>
-        <Icon icon="lucide:chevron-right" class="p-chev" aria-hidden="true" /> Terms
+    <AppCollapsible title="Terms" class="p-collapse">
+      <template #summary>
         <span class="p-sum-meta muted p-small p-num">{{ usdShort(c.budgetCents) }} · {{ usd(c.targetCpmCents) }} CPM · {{ when(c.deadline) }}</span>
-      </summary>
-      <div class="p-body p-stack">
+      </template>
+      <div class="p-stack">
         <p class="brief">
           {{ c.brief }}
         </p>
@@ -116,7 +116,7 @@ const share = (cents: number) => `${(cents / props.c.budgetCents) * 100}%`
           <PBadge icon="lucide:heart">{{ c.minEngagementRate ? `≥ ${pct(c.minEngagementRate)}` : 'Any engagement' }}</PBadge>
         </p>
       </div>
-    </details>
+    </AppCollapsible>
   </article>
 </template>
 

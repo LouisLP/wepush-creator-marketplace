@@ -1,14 +1,13 @@
 <script setup lang="ts">
 // PROTOTYPE (#52) — hub index. A: list rows · B: card grid · C: dense table.
 import { Icon } from '@iconify/vue'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { advertisers, count, creators, pct, platformIcon, platformLabel } from './fixtures.ts'
 import PBadge from './PBadge.vue'
 import PNewDialog from './PNewDialog.vue'
 import { useProtoState } from './state.ts'
 
 const { hub, variant, to } = useProtoState()
-const dialog = ref<InstanceType<typeof PNewDialog>>()
 const isAdv = computed(() => hub.value === 'advertisers')
 const initials = (s: string) => s.replace('@', '').slice(0, 2).toUpperCase()
 </script>
@@ -19,9 +18,7 @@ const initials = (s: string) => s.replace('@', '').slice(0, 2).toUpperCase()
       <h1 id="hub-heading">
         {{ isAdv ? 'Advertisers' : 'Creators' }}
       </h1>
-      <button type="button" class="btn" @click="dialog?.open()">
-        <Icon icon="lucide:plus" aria-hidden="true" /> New {{ isAdv ? 'Advertiser' : 'Creator' }}
-      </button>
+      <PNewDialog :key="hub" :kind="hub" />
     </header>
 
     <!-- A: list rows -->
@@ -107,7 +104,6 @@ const initials = (s: string) => s.replace('@', '').slice(0, 2).toUpperCase()
       </tbody>
     </table>
 
-    <PNewDialog ref="dialog" :kind="hub" />
   </section>
 </template>
 
