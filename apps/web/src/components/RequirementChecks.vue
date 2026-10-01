@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { RequirementCheck } from '@wepush/contracts'
+import IconCheck from '~icons/lucide/check'
+import IconX from '~icons/lucide/x'
+import AppTooltip from '@/components/kit/AppTooltip.vue'
 import { formatCount, formatPercent, formatPlatform } from '@/lib/format.ts'
 
 defineProps<{ checks: RequirementCheck[] }>()
@@ -19,32 +22,35 @@ function describe(c: RequirementCheck): { need: string, you: string } {
 
 <template>
   <ul class="checks">
-    <li v-for="c in checks" :key="c.requirement" :class="c.passed ? 'pass' : 'miss'">
-      <span class="mark" aria-hidden="true">{{ c.passed ? '✓' : '✗' }}</span>
-      <span class="visually-hidden">{{ c.passed ? 'Met:' : 'Not met:' }}</span>
-      {{ describe(c).need }}
-      <small class="muted">you: {{ describe(c).you }}</small>
-    </li>
+    <AppTooltip v-for="c in checks" :key="c.requirement" :content="`You: ${describe(c).you}`">
+      <li :class="c.passed ? 'pass' : 'miss'">
+        <IconCheck v-if="c.passed" class="mark" aria-hidden="true" />
+        <IconX v-else class="mark" aria-hidden="true" />
+        <span class="visually-hidden">{{ c.passed ? 'Met:' : 'Not met:' }}</span>
+        {{ describe(c).need }}
+        <span class="visually-hidden">(you: {{ describe(c).you }})</span>
+      </li>
+    </AppTooltip>
   </ul>
 </template>
 
 <style scoped>
 .checks {
-  display: grid;
-  gap: var(--space-2xs);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
   padding: 0;
   list-style: none;
 }
 
 li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  align-items: baseline;
-}
-
-.mark {
-  font-weight: var(--font-weight-bold);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
 }
 
 .pass .mark {
@@ -52,6 +58,8 @@ li {
 }
 
 .miss {
-  color: var(--color-danger-default);
+  border-color: var(--color-danger-border);
+  background-color: var(--color-danger-subtle-bg);
+  color: var(--color-danger-subtle-fg);
 }
 </style>
