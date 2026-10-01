@@ -10,6 +10,7 @@
     "typecheck": "vue-tsc --build"
   },
   "dependencies": {
+    "@iconify/vue": "^5.0.3",
     "@wepush/contracts": "workspace:*",
     "pinia": "^4.0.3",
     "reka-ui": "^2.10.5",

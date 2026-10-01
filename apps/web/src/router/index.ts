@@ -43,6 +43,7 @@ const router = createRouter({
         },
       ],
     },
+    { path: '/prototype/layouts', component: () => import('@/pages/prototype-layouts/LayoutsPrototype.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
