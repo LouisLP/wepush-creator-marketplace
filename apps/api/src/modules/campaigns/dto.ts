@@ -1,8 +1,9 @@
-import type { AdvertiserCampaignSummary, CampaignPreviewBodySchema, CreatorCampaign, MatchedCampaign } from '@wepush/contracts'
+import type { AdvertiserBid, AdvertiserCampaign, AdvertiserCampaignSummary, CampaignPreviewBodySchema, CreatorCampaign, MatchedCampaign, ScoreFactor } from '@wepush/contracts'
 import type { Campaign } from '@wepush/db'
 import type { ProposedTerms } from '@wepush/domain'
 import type { z } from 'zod'
 import type { AssessedCampaign } from './creator-service.ts'
+import type { CampaignReview } from './service.ts'
 import { cents } from '@wepush/domain'
 
 export function toAdvertiserCampaignSummary(c: Campaign & { bidCount: number }): AdvertiserCampaignSummary {
@@ -49,6 +50,38 @@ export function toCreatorCampaign(a: AssessedCampaign & Pick<CreatorCampaign, 'r
     relevance: { value: a.relevance, factors: a.factors },
     feeQuote: a.feeQuote,
     hasBid: a.hasBid,
+  }
+}
+
+export function toAdvertiserCampaign({ campaign: c, provisional, scoringVersion, bids, outcome }: CampaignReview): AdvertiserCampaign {
+  return {
+    id: c.id,
+    title: c.title,
+    brief: c.brief,
+    status: c.status,
+    requirements: c.terms.requirements,
+    budgetCents: c.terms.budgetCents,
+    targetCpmCents: c.terms.targetCpmCents,
+    biddingDeadline: c.terms.biddingDeadline.toISOString(),
+    createdAt: c.createdAt.toISOString(),
+    closedAt: c.outcome?.closedAt.toISOString() ?? null,
+    provisional,
+    scoringVersion,
+    outcome,
+    bids: bids.map(({ bid, handle, category, outcome: o }): AdvertiserBid => ({
+      id: bid.id,
+      handle,
+      category,
+      feeCents: bid.feeCents,
+      placedAt: bid.placedAt.toISOString(),
+      snapshot: bid.snapshot,
+      rank: o.rank,
+      score: o.score,
+      factors: o.factors as ScoreFactor[],
+      status: o.status,
+      lossReason: o.lossReason,
+      remainingBudgetCents: o.remainingBudgetCents,
+    })),
   }
 }
 

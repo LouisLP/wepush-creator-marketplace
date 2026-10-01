@@ -1,4 +1,4 @@
-import type { Platform } from '@wepush/contracts'
+import type { LossReason, Platform } from '@wepush/contracts'
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
@@ -12,6 +12,13 @@ export const formatDateTime = (iso: string) => dateTime.format(new Date(iso))
 
 const PLATFORM_LABELS: Record<Platform, string> = { tiktok: 'TikTok', instagram: 'Instagram' }
 export const formatPlatform = (platform: Platform) => PLATFORM_LABELS[platform]
+
+const LOSS_REASON_LABELS: Record<LossReason, string> = {
+  requirements_not_met: 'Snapshot didn’t meet the Requirements',
+  fee_out_of_range: 'Fee outside the Fee Range',
+  over_budget: 'Fee didn’t fit the Remaining Budget',
+}
+export const formatLossReason = (reason: LossReason) => LOSS_REASON_LABELS[reason]
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE

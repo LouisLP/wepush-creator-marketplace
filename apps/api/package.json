@@ -19,6 +19,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@wepush/worker": "workspace:*",
     "pino-pretty": "^13.1.3"
   }
 }
