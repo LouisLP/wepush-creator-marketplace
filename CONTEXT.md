@@ -11,7 +11,7 @@ A brand that creates Campaigns and reviews the Bids placed on them.
 _Avoid_: Brand, client, buyer
 
 **Creator**:
-A person with exactly one self-reported social profile on one Platform, described by Category, follower count and engagement rate. Someone active on two Platforms is two Creators.
+A person with exactly one self-reported social profile on one Platform, identified by a Handle and described by Category, follower count and engagement rate. Someone active on two Platforms is two Creators.
 _Avoid_: Influencer, profile, account, seller
 
 **Platform**:
@@ -21,6 +21,10 @@ _Avoid_: Network, channel, social
 **Category**:
 The single content genre a Creator belongs to, drawn from a fixed list (beauty, fashion, fitness, food, gaming, tech, travel, lifestyle, finance, parenting).
 _Avoid_: Genre, niche, vertical, tag
+
+**Handle**:
+The display name a Creator goes by on their Platform, e.g. `@mia.cooks`; self-reported, not verified.
+_Avoid_: Username, account name, nickname
 
 ### Campaigns
 
