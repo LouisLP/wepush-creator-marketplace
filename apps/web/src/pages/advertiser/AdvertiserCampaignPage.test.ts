@@ -78,37 +78,34 @@ afterEach(() => {
 })
 
 describe('advertiser campaign page', () => {
-  it('shows the provisional outcome, the Budget filled in Rank order, and the Bids', async () => {
+  it('shows the state badges, the provisional outcome, the Budget filled in Rank order, and the Bids', async () => {
     const fetch = stubApi(open)
     const wrapper = await mountPage()
 
     expect(fetch).toHaveBeenCalledWith(`/api/advertiser/campaigns/${ID}`, expect.objectContaining({
       headers: expect.objectContaining({ 'x-advertiser-id': ADVERTISER_ID }),
     }))
+    expect(wrapper.findAll('.head .badge').map(b => b.text())).toEqual(['Closing soon · 12h left', 'TikTok', 'Food'])
     const outcome = wrapper.get('#outcome-heading').element.closest('section')!
-    expect(outcome.textContent).toContain('If it closed now')
-    expect(outcome.textContent).toContain('Spent (projected)$130.00 of $150.00')
-    expect(outcome.textContent).toContain('2 of 4 Bids')
-    expect(outcome.textContent).toContain('$6.50 target $10.00')
+    expect(outcome.textContent).toContain('If it closed now Projected')
+    expect(outcome.textContent).toContain('Spent$130 / $150')
+    expect(outcome.textContent).toContain('Winners2 / 4 Bids')
+    expect(outcome.textContent).toContain('Est. Impressions20K')
+    expect(outcome.textContent).toContain('Blended CPM$6.50 35% under target')
     expect(wrapper.findAll('.segment').map(s => [s.text(), s.attributes('style')])).toEqual([
       ['#1', 'inline-size: 33.33%;'],
       ['#2', 'inline-size: 53.33%;'],
     ])
-    expect(wrapper.findAll('.winners li').map(li => li.text())).toEqual([
-      '#1@cheap$50.00 · 10K Est. Impressions · Effective CPM $5.00',
-      '#2@mid$80.00 · 10K Est. Impressions · Effective CPM $5.00',
+    expect(wrapper.find('.winners').exists()).toBe(false)
+    expect(wrapper.findAll('tbody .row').map(tr => tr.text())).toEqual([
+      '#1@cheap$5050%50% under target80Would win',
+      '#2@mid$8050%50% under target80Would win',
+      '#3@pricey$10050%50% under target80Would loseOver budgetFee didn’t fit the Remaining Budget',
+      '#4@tiny$5050%50% under target80Would loseRequirementsSnapshot didn’t meet the Requirements',
     ])
-    expect(wrapper.findAll('tbody tr').map(tr => tr.text())).toEqual([
-      expect.stringContaining('Would win'),
-      expect.stringContaining('Would win'),
-      expect.stringContaining('Fee didn’t fit the Remaining Budget'),
-      expect.stringContaining('Snapshot didn’t meet the Requirements'),
-    ])
-    expect(wrapper.text()).toContain('Open · 12h left')
-    expect(wrapper.text()).toContain('Show the snack.')
   })
 
-  it('expands a Bid to show its Score factors, Remaining Budget and Loss Reason', async () => {
+  it('expands a Bid to show its snapshot, Score factors and Remaining Budget', async () => {
     stubApi(open)
     const wrapper = await mountPage()
 
@@ -118,22 +115,53 @@ describe('advertiser campaign page', () => {
     expect(toggle.attributes('aria-expanded')).toBe('true')
     const detail = wrapper.get(`#${toggle.attributes('aria-controls')}`)
     expect(detail.findAll('meter')).toHaveLength(2)
-    expect(detail.text()).toContain('Remaining Budget when reached$20.00')
-    expect(detail.text()).toContain('Loss ReasonFee didn’t fit the Remaining Budget')
+    expect(detail.text()).toContain('Bid Snapshot50K followers · 5% engagement')
+    expect(detail.text()).toContain('Est. Impressions10K')
+    expect(detail.text()).toContain('Budget left when reached$20')
+
+    await toggle.trigger('click')
+    expect(wrapper.find(`#${toggle.attributes('aria-controls')}`).exists()).toBe(false)
   })
 
-  it('shows final Winners once Closed', async () => {
+  it('leaves out Budget left for a Bid that was never reached', async () => {
+    stubApi(open)
+    const wrapper = await mountPage()
+
+    await wrapper.findAll('tbody .row')[3]!.trigger('click')
+
+    expect(wrapper.get('.detail').text()).not.toContain('Budget left')
+  })
+
+  it('keeps the Terms collapsed behind a summary line', async () => {
+    stubApi(open)
+    const wrapper = await mountPage()
+
+    const trigger = wrapper.get('.terms button')
+    expect(trigger.attributes('aria-expanded')).toBe('false')
+    expect(trigger.text()).toMatch(/^Terms\$150 · \$10\.00 CPM · /)
+    expect(wrapper.text()).not.toContain('Show the snack.')
+
+    await trigger.trigger('click')
+
+    expect(wrapper.text()).toContain('Show the snack.')
+    expect(wrapper.text()).toContain('≥ 1K followers')
+    expect(wrapper.text()).toContain('Any engagement')
+  })
+
+  it('shows the final outcome once Closed', async () => {
     stubApi(closed)
     const wrapper = await mountPage()
 
-    expect(wrapper.get('#outcome-heading').text()).toBe('Winners')
-    expect(wrapper.text()).toContain('Spent$130.00 of $150.00')
-    expect(wrapper.text()).toContain('Scoring Version v1')
-    expect(wrapper.findAll('tbody tr').map(tr => tr.text())).toEqual([
-      expect.stringContaining('Won'),
-      expect.stringContaining('Won'),
-      expect.stringContaining('Lost'),
-      expect.stringContaining('Lost'),
+    expect(wrapper.get('#outcome-heading').text()).toBe('Outcome')
+    expect(wrapper.get('[role="status"]').text()).toBe('Closed')
+    expect(wrapper.text()).toContain('Spent$130 / $150')
+    expect(wrapper.text()).not.toContain('Projected')
+    expect(wrapper.text()).not.toContain('Scoring Version')
+    expect(wrapper.findAll('tbody .row').map(tr => tr.findAll('.badges > .badge').map(b => b.text()))).toEqual([
+      ['Won'],
+      ['Won'],
+      ['Lost', 'Over budgetFee didn’t fit the Remaining Budget'],
+      ['Lost', 'RequirementsSnapshot didn’t meet the Requirements'],
     ])
   })
 
@@ -141,27 +169,27 @@ describe('advertiser campaign page', () => {
     vi.setSystemTime(new Date('2026-01-01T23:59:58Z'))
     const fetch = stubApi(open)
     const wrapper = await mountPage()
-    expect(wrapper.get('[role="status"]').text()).toBe('Open · 1m left')
+    expect(wrapper.get('[role="status"]').text()).toBe('Closing soon · 1m left')
 
     await vi.advanceTimersByTimeAsync(5_000)
     await flushPromises()
 
-    expect(wrapper.get('[role="status"]').text()).toBe('Bidding over · closing shortly')
+    expect(wrapper.get('[role="status"]').text()).toBe('Closing shortly')
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 
-  it('says closing shortly past the deadline, and picks up the Winners once Closed', async () => {
+  it('says closing shortly past the deadline, and picks up the outcome once Closed', async () => {
     vi.setSystemTime(new Date('2026-01-02T00:00:01Z'))
     const fetch = stubApi(open, closed)
     const wrapper = await mountPage()
 
-    expect(wrapper.get('[role="status"]').text()).toBe('Bidding over · closing shortly')
+    expect(wrapper.get('[role="status"]').text()).toBe('Closing shortly')
 
     await vi.advanceTimersByTimeAsync(5_000)
     await flushPromises()
 
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(wrapper.get('#outcome-heading').text()).toBe('Winners')
+    expect(wrapper.get('#outcome-heading').text()).toBe('Outcome')
     expect(wrapper.get('[role="status"]').text()).toBe('Closed')
   })
 

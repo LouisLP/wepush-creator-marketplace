@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import type { AdvertiserBid } from '@wepush/contracts'
 import { shallowRef } from 'vue'
+import IconChevronDown from '~icons/lucide/chevron-down'
+import CpmVsTargetBadge from '@/components/CpmVsTargetBadge.vue'
 import ScoreFactors from '@/components/ScoreFactors.vue'
-import { formatCents, formatCount, formatLossReason, formatPercent } from '@/lib/format.ts'
+import { formatCents, formatCentsShort, formatCount, formatPercent } from '@/lib/format.ts'
+import BidOutcomeBadges from './BidOutcomeBadges.vue'
 
-const props = defineProps<{ bids: AdvertiserBid[], targetCpmCents: number, provisional: boolean }>()
+defineProps<{ bids: AdvertiserBid[], targetCpmCents: number, provisional: boolean }>()
 
 const expanded = shallowRef<string>()
 const toggle = (id: string) => expanded.value = expanded.value === id ? undefined : id
-
-function outcomeLabel(b: AdvertiserBid) {
-  if (props.provisional)
-    return b.status === 'won' ? 'Would win' : 'Would lose'
-  return b.status === 'won' ? 'Won' : 'Lost'
-}
 </script>
 
 <template>
@@ -24,23 +21,17 @@ function outcomeLabel(b: AdvertiserBid) {
     <table>
       <thead>
         <tr>
-          <th scope="col">
+          <th scope="col" class="num">
             Rank
           </th>
           <th scope="col">
             Creator
           </th>
-          <th scope="col">
-            Bid Snapshot
-          </th>
-          <th scope="col" class="num">
-            Est. Impressions
-          </th>
           <th scope="col" class="num">
             Fee
           </th>
-          <th scope="col" class="num">
-            Effective CPM
+          <th scope="col">
+            CPM vs Target
           </th>
           <th scope="col" class="num">
             Score
@@ -48,59 +39,67 @@ function outcomeLabel(b: AdvertiserBid) {
           <th scope="col">
             Outcome
           </th>
+          <th scope="col">
+            <span class="visually-hidden">Details</span>
+          </th>
         </tr>
       </thead>
-      <tbody v-for="b in bids" :key="b.id" :class="b.status">
-        <tr>
+      <tbody v-for="b in bids" :key="b.id" :class="{ lost: b.status === 'lost', open: expanded === b.id }">
+        <tr class="row" @click="toggle(b.id)">
+          <td class="num rank">
+            #{{ b.rank }}
+          </td>
+          <td class="handle">
+            {{ b.handle }}
+          </td>
+          <td class="num">
+            {{ formatCentsShort(b.feeCents) }}
+          </td>
           <td>
+            <CpmVsTargetBadge :cpm-cents="b.snapshot.effectiveCpmCents" :target-cpm-cents="targetCpmCents" compact />
+          </td>
+          <td class="num">
+            {{ b.score }}
+          </td>
+          <td>
+            <BidOutcomeBadges :bid="b" :provisional="provisional" />
+          </td>
+          <td class="end">
             <button
               type="button"
               class="toggle"
               :aria-expanded="expanded === b.id"
               :aria-controls="`bid-${b.id}`"
               :aria-label="`Details for ${b.handle}`"
-              @click="toggle(b.id)"
+              @click.stop="toggle(b.id)"
             >
-              <span aria-hidden="true">{{ expanded === b.id ? '▾' : '▸' }}</span> #{{ b.rank }}
+              <IconChevronDown aria-hidden="true" class="chevron" />
             </button>
-          </td>
-          <td>
-            {{ b.handle }}<br><small class="muted">{{ b.category }}</small>
-          </td>
-          <td>
-            {{ formatCount(b.snapshot.followers) }} followers<br>
-            <small class="muted">{{ formatPercent(b.snapshot.engagementRate) }} engagement</small>
-          </td>
-          <td class="num">
-            {{ formatCount(b.snapshot.estimatedImpressions) }}
-          </td>
-          <td class="num">
-            {{ formatCents(b.feeCents) }}
-          </td>
-          <td class="num" :class="b.snapshot.effectiveCpmCents <= targetCpmCents ? 'under' : 'over'">
-            {{ formatCents(b.snapshot.effectiveCpmCents) }}
-          </td>
-          <td class="num">
-            {{ b.score }}
-          </td>
-          <td>
-            {{ outcomeLabel(b) }}
-            <br v-if="b.lossReason"><small v-if="b.lossReason" class="muted">{{ formatLossReason(b.lossReason) }}</small>
           </td>
         </tr>
         <tr v-if="expanded === b.id" :id="`bid-${b.id}`" class="detail">
-          <td colspan="8">
-            <ScoreFactors :score="b.score" :factors="b.factors" />
-            <dl>
-              <div>
-                <dt>Remaining Budget when reached</dt>
-                <dd>{{ b.remainingBudgetCents === null ? 'Not reached (not Eligible)' : formatCents(b.remainingBudgetCents) }}</dd>
-              </div>
-              <div v-if="b.lossReason">
-                <dt>Loss Reason</dt>
-                <dd>{{ formatLossReason(b.lossReason) }}</dd>
-              </div>
-            </dl>
+          <td colspan="7">
+            <div class="detail-body">
+              <ScoreFactors :score="b.score" :factors="b.factors" />
+              <dl>
+                <div>
+                  <dt>Bid Snapshot</dt>
+                  <dd>{{ formatCount(b.snapshot.followers) }} followers · {{ formatPercent(b.snapshot.engagementRate) }} engagement</dd>
+                </div>
+                <div>
+                  <dt>Est. Impressions</dt>
+                  <dd>{{ formatCount(b.snapshot.estimatedImpressions) }}</dd>
+                </div>
+                <div>
+                  <dt>Effective CPM</dt>
+                  <dd>{{ formatCents(b.snapshot.effectiveCpmCents) }}</dd>
+                </div>
+                <div v-if="b.remainingBudgetCents !== null">
+                  <dt>Budget left when reached</dt>
+                  <dd>{{ formatCentsShort(b.remainingBudgetCents) }}</dd>
+                </div>
+              </dl>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -120,16 +119,18 @@ table {
 
 th,
 td {
-  padding: var(--space-xs) var(--space-sm);
+  padding: var(--space-sm);
   border-block-end: 1px solid var(--color-border-subtle);
   text-align: start;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 th {
+  padding-block: var(--space-xs);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
 }
 
 .num {
@@ -137,46 +138,82 @@ th {
   font-variant-numeric: tabular-nums;
 }
 
-.won td:first-child {
-  box-shadow: inset 3px 0 var(--color-success-default);
+.rank {
+  color: var(--color-text-muted);
 }
 
-.lost {
+.handle {
+  font-weight: var(--font-weight-medium);
+}
+
+.lost .handle {
   color: var(--color-text-secondary);
+  font-weight: var(--font-weight-normal);
 }
 
-.under {
-  color: var(--color-success-subtle-fg);
+.row {
+  cursor: pointer;
 }
 
-.over {
-  color: var(--color-danger-subtle-fg);
+.row:hover td,
+.open .row td {
+  background-color: var(--color-bg-surface-hover);
+}
+
+.end {
+  inline-size: 1%;
 }
 
 .toggle {
-  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  padding: var(--space-2xs);
   border: 0;
+  border-radius: var(--radius-md);
   background: none;
-  color: inherit;
-  font: inherit;
-  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
   cursor: pointer;
-  white-space: nowrap;
+}
+
+.toggle:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.toggle[aria-expanded='true'] .chevron {
+  rotate: 180deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chevron {
+    transition: rotate var(--duration-fast) var(--ease-out);
+  }
 }
 
 .detail td {
+  padding: var(--space-lg) var(--space-md);
   background-color: var(--color-bg-surface-raised);
 }
 
+.detail-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-xl);
+  align-items: start;
+}
+
 .detail dl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-lg);
-  margin-block-start: var(--space-md);
+  display: grid;
+  gap: var(--space-sm);
 }
 
 .detail dt {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+.detail dd {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
 }
 </style>

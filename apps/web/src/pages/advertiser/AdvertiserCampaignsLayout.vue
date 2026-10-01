@@ -17,8 +17,8 @@ void useAdvertiserCampaignsStore().reload()
 <style scoped>
 .layout {
   display: grid;
-  grid-template-columns: 16rem minmax(0, 1fr);
-  gap: var(--space-xl);
+  grid-template-columns: 18rem minmax(0, 1fr);
+  gap: var(--space-2xl);
   align-items: start;
 }
 

@@ -13,6 +13,7 @@
   background-color: var(--color-accent-default);
   color: var(--color-text-on-accent);
   font-weight: var(--font-weight-semibold);
+  text-decoration: none;
   cursor: pointer;
 }
 

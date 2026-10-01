@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { getAdvertiserCampaign } from '@wepush/contracts'
 import { computed, onScopeDispose, shallowRef, watch } from 'vue'
+import IconHeart from '~icons/lucide/heart'
+import IconTag from '~icons/lucide/tag'
+import IconUsers from '~icons/lucide/users'
 import { call } from '@/api'
 import BidsTable from '@/components/advertiser/BidsTable.vue'
 import OutcomeCard from '@/components/advertiser/OutcomeCard.vue'
+import CampaignStateBadge from '@/components/CampaignStateBadge.vue'
+import InfoTip from '@/components/InfoTip.vue'
+import AppBadge from '@/components/kit/AppBadge.vue'
+import AppCollapsible from '@/components/kit/AppCollapsible.vue'
+import PlatformIcon from '@/components/PlatformIcon.vue'
 import { useRequest } from '@/composables/useRequest.ts'
-import { formatCents, formatCount, formatDateTime, formatPercent, formatPlatform, formatTimeLeft } from '@/lib/format.ts'
+import { campaignPhase } from '@/lib/campaignPhase.ts'
+import { formatCategory, formatCents, formatCentsShort, formatCount, formatDateTime, formatPercent, formatPlatform } from '@/lib/format.ts'
 import { useAdvertiserCampaignsStore } from '@/stores/advertiserCampaigns.ts'
 
 const props = defineProps<{ id: string }>()
@@ -20,7 +29,7 @@ const now = shallowRef(new Date())
 
 // Past the deadline but not yet Closed: the worker is due to pick it up.
 const closingShortly = computed(() =>
-  campaign.value?.status === 'open' && new Date(campaign.value.biddingDeadline) <= now.value)
+  campaign.value !== undefined && campaignPhase(campaign.value.status, campaign.value.biddingDeadline, now.value) === 'closing')
 
 const tick = setInterval(() => {
   now.value = new Date()
@@ -36,15 +45,6 @@ watch(campaign, (c) => {
   if (listed && listed.status !== c.status)
     void campaigns.reload()
 })
-
-const statusLine = computed(() => {
-  const c = campaign.value
-  if (!c)
-    return ''
-  if (c.status === 'closed')
-    return 'Closed'
-  return closingShortly.value ? 'Bidding over · closing shortly' : `Open · ${formatTimeLeft(c.biddingDeadline, now.value)}`
-})
 </script>
 
 <template>
@@ -56,72 +56,131 @@ const statusLine = computed(() => {
       <h1 id="campaign-heading">
         {{ campaign.title }}
       </h1>
-      <p class="muted">
-        {{ formatPlatform(campaign.requirements.platform) }} · <span class="status" role="status">{{ statusLine }}</span>
+      <p class="badges">
+        <span role="status">
+          <CampaignStateBadge :status="campaign.status" :bidding-deadline="campaign.biddingDeadline" :now="now" long />
+        </span>
+        <AppBadge>
+          <PlatformIcon :platform="campaign.requirements.platform" aria-hidden="true" />
+          {{ formatPlatform(campaign.requirements.platform) }}
+        </AppBadge>
+        <AppBadge v-for="c in campaign.requirements.categories" :key="c" :icon="IconTag">
+          {{ formatCategory(c) }}
+        </AppBadge>
       </p>
     </header>
 
     <OutcomeCard :campaign="campaign" />
 
-    <section class="card" aria-labelledby="bids-heading">
+    <section class="card section" aria-labelledby="bids-heading">
       <h2 id="bids-heading">
-        Bids
+        Bids <small class="muted">{{ campaign.bids.length }}</small>
+        <InfoTip
+          v-if="campaign.provisional && campaign.bids.length"
+          content="Provisional Ranks: what Closing would decide if it ran now. Open a Bid to see why."
+        />
       </h2>
-      <p v-if="campaign.provisional && campaign.bids.length" class="muted">
-        Provisional Ranks — what Closing would decide if it ran now. Select a Rank to see why.
-      </p>
       <BidsTable :bids="campaign.bids" :target-cpm-cents="campaign.targetCpmCents" :provisional="campaign.provisional" />
     </section>
 
-    <section class="card" aria-labelledby="terms-heading">
-      <h2 id="terms-heading">
-        Terms
-      </h2>
-      <blockquote class="brief">
-        {{ campaign.brief }}
-      </blockquote>
-      <dl class="terms">
-        <div><dt>Budget</dt><dd>{{ formatCents(campaign.budgetCents) }}</dd></div>
-        <div><dt>Target CPM</dt><dd>{{ formatCents(campaign.targetCpmCents) }}</dd></div>
-        <div><dt>Bidding Deadline</dt><dd>{{ formatDateTime(campaign.biddingDeadline) }}</dd></div>
-        <div><dt>Platform</dt><dd>{{ formatPlatform(campaign.requirements.platform) }}</dd></div>
-        <div><dt>Categories</dt><dd>{{ campaign.requirements.categories.join(', ') }}</dd></div>
-        <div><dt>Min. followers</dt><dd>{{ formatCount(campaign.requirements.minFollowers) }}</dd></div>
-        <div>
-          <dt>Min. engagement</dt>
-          <dd>{{ campaign.requirements.minEngagementRate === null ? 'Any' : formatPercent(campaign.requirements.minEngagementRate) }}</dd>
-        </div>
-      </dl>
-    </section>
+    <AppCollapsible title="Terms" class="terms">
+      <template #summary>
+        <span class="summary">
+          {{ formatCentsShort(campaign.budgetCents) }} · {{ formatCents(campaign.targetCpmCents) }} CPM · {{ formatDateTime(campaign.biddingDeadline) }}
+        </span>
+      </template>
+      <div class="terms-body">
+        <p class="brief">
+          {{ campaign.brief }}
+        </p>
+        <dl class="terms-list">
+          <div><dt>Budget</dt><dd>{{ formatCents(campaign.budgetCents) }}</dd></div>
+          <div><dt>Target CPM</dt><dd>{{ formatCents(campaign.targetCpmCents) }}</dd></div>
+          <div><dt>Bidding Deadline</dt><dd>{{ formatDateTime(campaign.biddingDeadline) }}</dd></div>
+        </dl>
+        <p class="badges">
+          <AppBadge :icon="IconUsers">
+            ≥ {{ formatCount(campaign.requirements.minFollowers) }} followers
+          </AppBadge>
+          <AppBadge :icon="IconHeart">
+            {{ campaign.requirements.minEngagementRate === null ? 'Any engagement' : `≥ ${formatPercent(campaign.requirements.minEngagementRate)} engagement` }}
+          </AppBadge>
+        </p>
+      </div>
+    </AppCollapsible>
   </article>
 </template>
 
 <style scoped>
-.page,
-.head,
-.card {
+.page {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.head {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.section {
   display: grid;
   gap: var(--space-md);
 }
 
-.head {
+h2 {
+  display: flex;
+  align-items: center;
   gap: var(--space-xs);
-}
-
-.card h2 {
   font-size: var(--font-size-lg);
 }
 
-.brief {
-  margin: 0;
-  padding-inline-start: var(--space-md);
-  border-inline-start: 3px solid var(--color-border-default);
-  white-space: pre-line;
+h2 small {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
 }
 
 .terms {
+  padding: var(--space-xs) var(--space-lg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-surface);
+}
+
+.summary {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-normal);
+}
+
+/* The summary takes the auto margin, so the chevron sits right after it */
+.terms :deep(.summary + .chevron) {
+  margin-inline-start: 0;
+}
+
+.terms-body {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-lg);
+  padding-block: var(--space-sm);
+}
+
+.brief {
+  color: var(--color-text-secondary);
+  white-space: pre-line;
+}
+
+.terms-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: var(--space-md);
 }
 

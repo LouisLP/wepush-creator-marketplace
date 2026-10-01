@@ -1,11 +1,16 @@
 import type { Category, LossReason, Platform } from '@wepush/contracts'
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const usdWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 })
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
 export const formatCents = (cents: number) => usd.format(cents / 100)
+/** Drops the cents when they're zero: `$130`, `$12.50`. */
+export const formatCentsShort = (cents: number) => (cents % 100 === 0 ? usdWhole : usd).format(cents / 100)
+/** Rounded to whole dollars, for tight spots: `$1,486`. */
+export const formatDollars = (cents: number) => usdWhole.format(cents / 100)
 export const formatCount = (n: number) => compact.format(n)
 export const formatPercent = (fraction: number) => percent.format(fraction)
 export const formatDateTime = (iso: string) => dateTime.format(new Date(iso))
@@ -25,6 +30,13 @@ const LOSS_REASON_LABELS: Record<LossReason, string> = {
   over_budget: 'Fee didn’t fit the Remaining Budget',
 }
 export const formatLossReason = (reason: LossReason) => LOSS_REASON_LABELS[reason]
+
+const LOSS_REASON_SHORT: Record<LossReason, string> = {
+  requirements_not_met: 'Requirements',
+  fee_out_of_range: 'Fee out of range',
+  over_budget: 'Over budget',
+}
+export const formatLossReasonShort = (reason: LossReason) => LOSS_REASON_SHORT[reason]
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
