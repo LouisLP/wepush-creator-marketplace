@@ -1,5 +1,6 @@
 import type { DbExecutor } from '../client.ts'
 import { randomUUID } from 'node:crypto'
+import { asc } from 'drizzle-orm'
 import { advertisers, bids, campaigns, creators } from '../schema/index.ts'
 
 export async function insertAdvertiser(db: DbExecutor, overrides: Partial<typeof advertisers.$inferInsert> = {}) {
@@ -49,4 +50,12 @@ export async function insertBid(db: DbExecutor, overrides: Partial<typeof bids.$
     ...overrides,
   }).returning()
   return row!
+}
+
+export async function listCampaigns(db: DbExecutor) {
+  return db.select().from(campaigns).orderBy(asc(campaigns.id))
+}
+
+export async function listBids(db: DbExecutor) {
+  return db.select().from(bids).orderBy(asc(bids.id))
 }

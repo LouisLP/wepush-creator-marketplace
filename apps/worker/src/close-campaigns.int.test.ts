@@ -1,5 +1,6 @@
 import type { CampaignId } from '@wepush/domain'
-import { createTestContext, insertBid, insertCampaign } from '@wepush/db/testing'
+import { seed } from '@wepush/db/seed'
+import { createTestContext, insertBid, insertCampaign, listBids, listCampaigns } from '@wepush/db/testing'
 import { SCORING_VERSION } from '@wepush/domain'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { closeNextDue } from './close-campaigns.ts'
@@ -40,5 +41,26 @@ describe('closeNextDue', () => {
     const results = await Promise.all([closeNextDue(ctx, noExclude), closeNextDue(ctx, noExclude)])
 
     expect(results.map(r => r.kind).sort()).toEqual(['closed', 'idle'])
+  })
+
+  it('closes exactly the past-due seeded campaigns', async () => {
+    const now = new Date('2026-10-01T12:00:00Z')
+    await seed(ctx.db, { now })
+    ctx.clock.set(now)
+    const pastDue = (await listCampaigns(ctx.db)).filter(c => c.biddingDeadline <= now).map(c => c.id)
+
+    const closed: string[] = []
+    for (let r = await closeNextDue(ctx, noExclude); r.kind === 'closed'; r = await closeNextDue(ctx, noExclude))
+      closed.push(r.campaignId)
+
+    expect(closed.sort()).toEqual(pastDue.sort())
+
+    const bids = await listBids(ctx.db)
+    const statusesOf = (id: string) => bids.filter(b => b.campaignId === id).map(b => b.lossReason ?? b.status)
+    const [empty, ...contested] = pastDue.map(statusesOf).sort((a, b) => a.length - b.length)
+    expect(empty).toEqual([])
+    expect(contested).toHaveLength(2)
+    for (const statuses of contested)
+      expect(statuses).toEqual(expect.arrayContaining(['won', 'over_budget']))
   })
 })

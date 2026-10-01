@@ -7,7 +7,7 @@ export default antfu(
     ignores: ['packages/db/migrations/**', 'INSTRUCTIONS.md'],
   },
   {
-    files: ['apps/*/src/{server,main}.ts', 'packages/db/src/{migrate,seed}.ts'],
+    files: ['apps/*/src/{server,main}.ts', 'packages/db/src/migrate.ts', 'packages/db/src/seed/seed.ts'],
     rules: {
       'antfu/no-top-level-await': 'off',
       'no-console': 'off',
