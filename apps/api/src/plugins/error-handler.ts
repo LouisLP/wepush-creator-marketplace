@@ -4,6 +4,8 @@ import { STATUS_CODES } from 'node:http'
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import { AppError, STATUS_BY_CODE } from '../errors.ts'
 
+type NotFoundFallback = (req: FastifyRequest, reply: FastifyReply) => FastifyReply | undefined
+
 function problem(code: ErrorCode, detail: string, requestId: string, status = STATUS_BY_CODE[code], extras: object = {}) {
   return {
     type: 'about:blank',
@@ -39,7 +41,7 @@ function send(reply: FastifyReply, body: Problem) {
   return reply.status(body.status).type('application/problem+json').send(body)
 }
 
-export function registerErrorHandling(app: FastifyInstance) {
+export function registerErrorHandling(app: FastifyInstance, notFoundFallback?: NotFoundFallback) {
   app.setErrorHandler((error, req: FastifyRequest, reply) => {
     const body = toProblem(error, req.id)
     if (body.status >= 500)
@@ -50,6 +52,9 @@ export function registerErrorHandling(app: FastifyInstance) {
   })
 
   app.setNotFoundHandler((req, reply) => {
+    const handled = notFoundFallback?.(req, reply)
+    if (handled)
+      return handled
     req.log.info({ code: 'not_found', status: 404 }, 'request rejected')
     return send(reply, problem('not_found', `Route ${req.method} ${req.url} not found`, req.id))
   })

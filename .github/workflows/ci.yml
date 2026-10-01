@@ -46,3 +46,10 @@ jobs:
           test -z "$(git ls-files --others --exclude-standard -- packages/db/migrations)"
       - run: pnpm test --coverage
       - run: pnpm build
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target api -t wepush/api .
+      - run: docker build --target worker -t wepush/worker .
