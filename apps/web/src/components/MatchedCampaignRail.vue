@@ -5,6 +5,7 @@ import { useRequest } from '@/composables/useRequest.ts'
 import { formatCents, formatTimeLeft } from '@/lib/format.ts'
 
 const matched = useRequest(() => call(listMatchedCampaigns))
+defineExpose({ reload: matched.reload })
 </script>
 
 <template>

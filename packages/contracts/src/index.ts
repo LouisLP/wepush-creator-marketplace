@@ -1,4 +1,5 @@
 export * from './advertisers.ts'
+export * from './bids.ts'
 export * from './campaigns.ts'
 export * from './creators.ts'
 export * from './endpoint.ts'

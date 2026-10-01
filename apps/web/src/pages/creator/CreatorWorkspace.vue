@@ -1,10 +1,24 @@
 <script setup lang="ts">
+import { provide, useTemplateRef } from 'vue'
 import MatchedCampaignRail from '@/components/MatchedCampaignRail.vue'
+import MyBidsRail from '@/components/MyBidsRail.vue'
+import { REFRESH_RAIL } from './refresh.ts'
+
+const matched = useTemplateRef('matched')
+const myBids = useTemplateRef('myBids')
+
+provide(REFRESH_RAIL, () => {
+  void matched.value?.reload()
+  void myBids.value?.reload()
+})
 </script>
 
 <template>
   <div class="workspace">
-    <MatchedCampaignRail class="rail" />
+    <aside class="rail">
+      <MatchedCampaignRail ref="matched" />
+      <MyBidsRail ref="myBids" />
+    </aside>
     <div class="pane">
       <RouterView />
     </div>
@@ -22,6 +36,8 @@ import MatchedCampaignRail from '@/components/MatchedCampaignRail.vue'
 .rail {
   position: sticky;
   top: var(--space-md);
+  display: grid;
+  gap: var(--space-xl);
 }
 
 @media (width < 48rem) {

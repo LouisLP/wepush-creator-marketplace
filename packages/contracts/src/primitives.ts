@@ -14,4 +14,13 @@ export const CampaignStatusSchema = z.enum(CAMPAIGN_STATUSES)
 export const BidStatusSchema = z.enum(BID_STATUSES)
 export const LossReasonSchema = z.enum(LOSS_REASONS)
 
+export function factorSchema<K extends string>(weights: Record<K, number>) {
+  return z.object({
+    key: z.enum(Object.keys(weights) as [K, ...K[]]),
+    value: z.number().min(0).max(1),
+    weight: z.number(),
+    contribution: z.number(),
+  })
+}
+
 export const listOf = <T extends z.ZodType>(item: T) => z.object({ items: z.array(item) })

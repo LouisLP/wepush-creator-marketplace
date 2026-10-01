@@ -1,10 +1,11 @@
 import type { AdvertiserBid, AdvertiserCampaign, AdvertiserCampaignSummary, CampaignPreviewBodySchema, CreatorCampaign, MatchedCampaign, ScoreFactor } from '@wepush/contracts'
-import type { Campaign } from '@wepush/db'
+import type { Bid, Campaign } from '@wepush/db'
 import type { ProposedTerms } from '@wepush/domain'
 import type { z } from 'zod'
 import type { AssessedCampaign } from './creator-service.ts'
 import type { CampaignReview } from './service.ts'
 import { cents } from '@wepush/domain'
+import { toCreatorBid } from '../bids/dto.ts'
 
 export function toAdvertiserCampaignSummary(c: Campaign & { bidCount: number }): AdvertiserCampaignSummary {
   return {
@@ -34,7 +35,7 @@ export function toMatchedCampaign({ campaign: c, relevance, factors, feeQuote }:
   }
 }
 
-export function toCreatorCampaign(a: AssessedCampaign & Pick<CreatorCampaign, 'requirementChecks' | 'hasBid'>): CreatorCampaign {
+export function toCreatorCampaign(a: AssessedCampaign & Pick<CreatorCampaign, 'requirementChecks'> & { bid: Bid | null }): CreatorCampaign {
   const { campaign: c } = a
   return {
     id: c.id,
@@ -49,7 +50,7 @@ export function toCreatorCampaign(a: AssessedCampaign & Pick<CreatorCampaign, 'r
     requirementChecks: a.requirementChecks,
     relevance: { value: a.relevance, factors: a.factors },
     feeQuote: a.feeQuote,
-    hasBid: a.hasBid,
+    bid: a.bid && toCreatorBid(a.bid, c.outcome?.scoringVersion),
   }
 }
 

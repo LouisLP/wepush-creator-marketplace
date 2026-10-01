@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { formatTimeLeft } from './format.ts'
+import { formatTimeLeft, formatVsTarget } from './format.ts'
+
+describe('formatVsTarget', () => {
+  it.each([
+    [1_000, 'at target'],
+    [800, '20% under target'],
+    [1_250, '25% over target'],
+  ])('%i vs 1000 → %s', (cpm, expected) => {
+    expect(formatVsTarget(cpm, 1_000)).toBe(expected)
+  })
+})
 
 describe('formatTimeLeft', () => {
   const now = new Date('2026-01-01T12:00:00Z')

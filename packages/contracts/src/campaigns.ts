@@ -1,8 +1,9 @@
-import { CAMPAIGN_LIMITS, RELEVANCE_WEIGHTS, SCORE_WEIGHTS } from '@wepush/domain'
+import { CAMPAIGN_LIMITS, RELEVANCE_WEIGHTS } from '@wepush/domain'
 import { z } from 'zod'
+import { CreatorBidSchema, ScoreFactorSchema } from './bids.ts'
 import { defineEndpoint } from './endpoint.ts'
 import { RequirementCheckSchema } from './errors.ts'
-import { BidStatusSchema, CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema, PlatformSchema } from './primitives.ts'
+import { BidStatusSchema, CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, factorSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema, PlatformSchema } from './primitives.ts'
 
 export { CAMPAIGN_LIMITS, PLATFORM_BENCHMARKS } from '@wepush/domain'
 
@@ -69,15 +70,6 @@ export const RequirementsSchema = z.object({
 })
 export type Requirements = z.infer<typeof RequirementsSchema>
 
-function factorSchema<K extends string>(weights: Record<K, number>) {
-  return z.object({
-    key: z.enum(Object.keys(weights) as [K, ...K[]]),
-    value: z.number().min(0).max(1),
-    weight: z.number(),
-    contribution: z.number(),
-  })
-}
-
 export const RelevanceFactorSchema = factorSchema(RELEVANCE_WEIGHTS)
 export type RelevanceFactor = z.infer<typeof RelevanceFactorSchema>
 
@@ -121,7 +113,7 @@ export const CreatorCampaignSchema = z.object({
   requirementChecks: z.array(RequirementCheckSchema),
   relevance: RelevanceSchema,
   feeQuote: FeeQuoteSchema,
-  hasBid: z.boolean(),
+  bid: CreatorBidSchema.nullable(),
 })
 export type CreatorCampaign = z.infer<typeof CreatorCampaignSchema>
 
@@ -152,9 +144,6 @@ export const previewCampaign = defineEndpoint({
   body: CampaignPreviewBodySchema,
   response: CampaignPreviewSchema,
 })
-
-export const ScoreFactorSchema = factorSchema(SCORE_WEIGHTS)
-export type ScoreFactor = z.infer<typeof ScoreFactorSchema>
 
 const CentsOrZeroSchema = z.int().nonnegative().max(Number.MAX_SAFE_INTEGER)
 

@@ -10,6 +10,11 @@ export const formatCount = (n: number) => compact.format(n)
 export const formatPercent = (fraction: number) => percent.format(fraction)
 export const formatDateTime = (iso: string) => dateTime.format(new Date(iso))
 
+export function formatVsTarget(effectiveCpmCents: number, targetCpmCents: number): string {
+  const pct = Math.round((effectiveCpmCents / targetCpmCents - 1) * 100)
+  return pct === 0 ? 'at target' : pct < 0 ? `${-pct}% under target` : `${pct}% over target`
+}
+
 const PLATFORM_LABELS: Record<Platform, string> = { tiktok: 'TikTok', instagram: 'Instagram' }
 export const formatPlatform = (platform: Platform) => PLATFORM_LABELS[platform]
 

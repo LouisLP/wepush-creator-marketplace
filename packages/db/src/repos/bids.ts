@@ -1,7 +1,8 @@
-import type { BidId, BidOutcome, CampaignId, Cents, CreatorId, PendingBid } from '@wepush/domain'
+import type { BidId, BidOutcome, BidSnapshot, CampaignId, Cents, CreatorId, PendingBid } from '@wepush/domain'
 import type { DbExecutor } from '../client.ts'
-import { and, asc, eq } from 'drizzle-orm'
-import { bids, creators } from '../schema/index.ts'
+import { and, asc, desc, eq } from 'drizzle-orm'
+import { translatingDbErrors } from '../errors.ts'
+import { bids, campaigns, creators } from '../schema/index.ts'
 
 type Row = typeof bids.$inferSelect
 
@@ -35,6 +36,25 @@ function toRecordedOutcome(row: Row): BidOutcome | null {
   }
 }
 
+function toBid(row: Row) {
+  return {
+    ...toPendingBid(row),
+    campaignId: row.campaignId as CampaignId,
+    status: row.status,
+    outcome: toRecordedOutcome(row),
+  }
+}
+export type Bid = ReturnType<typeof toBid>
+export type BidWithCampaign = Bid & { campaignTitle: string, biddingDeadline: Date }
+
+export interface NewBid {
+  campaignId: CampaignId
+  creatorId: CreatorId
+  feeCents: Cents
+  placedAt: Date
+  snapshot: BidSnapshot
+}
+
 export function createBidRepo(exec: DbExecutor) {
   return {
     async listPending(campaignId: CampaignId) {
@@ -57,9 +77,23 @@ export function createBidRepo(exec: DbExecutor) {
       }))
     },
 
-    async exists(campaignId: CampaignId, creatorId: CreatorId) {
-      const [row] = await exec.select({ id: bids.id }).from(bids).where(and(eq(bids.campaignId, campaignId), eq(bids.creatorId, creatorId)))
-      return !!row
+    async findByCampaignAndCreator(campaignId: CampaignId, creatorId: CreatorId) {
+      const [row] = await exec.select().from(bids).where(and(eq(bids.campaignId, campaignId), eq(bids.creatorId, creatorId)))
+      return row && toBid(row)
+    },
+
+    async listByCreator(creatorId: CreatorId): Promise<BidWithCampaign[]> {
+      const rows = await exec.select({ bid: bids, campaignTitle: campaigns.title, biddingDeadline: campaigns.biddingDeadline })
+        .from(bids)
+        .innerJoin(campaigns, eq(campaigns.id, bids.campaignId))
+        .where(eq(bids.creatorId, creatorId))
+        .orderBy(desc(bids.placedAt), desc(bids.id))
+      return rows.map(r => ({ ...toBid(r.bid), campaignTitle: r.campaignTitle, biddingDeadline: r.biddingDeadline }))
+    },
+
+    async place({ snapshot, ...bid }: NewBid) {
+      const [row] = await translatingDbErrors(() => exec.insert(bids).values({ ...bid, ...snapshot }).returning())
+      return toBid(row!)
     },
 
     async recordOutcomes(outcomes: readonly BidOutcome[]) {
