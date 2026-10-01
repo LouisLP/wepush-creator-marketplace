@@ -12,6 +12,7 @@
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
     "infra:reset": "docker compose down -v",
+    "prod": "docker compose --profile prod up --build",
     "db:migrate": "pnpm --filter @wepush/db migrate",
     "db:generate": "pnpm --filter @wepush/db generate",
     "db:seed": "pnpm --filter @wepush/db seed",

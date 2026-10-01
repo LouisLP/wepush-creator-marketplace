@@ -1,4 +1,4 @@
-export { createDb } from './client.ts'
+export { createDb, ping } from './client.ts'
 export type { Db, DbExecutor, DbOptions } from './client.ts'
 export * from './errors.ts'
 export { runMigrations } from './migrate.ts'

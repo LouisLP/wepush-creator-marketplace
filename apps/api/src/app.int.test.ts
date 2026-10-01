@@ -1,7 +1,10 @@
 import type { FastifyInstance } from 'fastify'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { ADVERTISER_ID_HEADER, CREATOR_ID_HEADER } from '@wepush/contracts'
 import { createTestContext, insertAdvertiser, insertCampaign, insertCreator } from '@wepush/db/testing'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from './app.ts'
 import { AppError } from './errors.ts'
 
@@ -14,6 +17,89 @@ beforeEach(async () => {
 })
 afterEach(() => app.close())
 afterAll(() => ctx.close())
+
+describe('health', () => {
+  it('/healthz is up without touching the DB', async () => {
+    const down = await buildApp({ ...ctx, pingDb: () => Promise.reject(new Error('db down')) })
+
+    const res = await down.inject({ method: 'GET', url: '/healthz' })
+    await down.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({ status: 'ok' })
+  })
+
+  it('/readyz is ready when the DB answers', async () => {
+    const res = await app.inject({ method: 'GET', url: '/readyz' })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({ status: 'ok' })
+  })
+
+  it('/readyz is 503 when the DB is unreachable', async () => {
+    const down = await buildApp({ ...ctx, pingDb: () => Promise.reject(new Error('db down')) })
+
+    const res = await down.inject({ method: 'GET', url: '/readyz' })
+    await down.close()
+
+    expect(res.statusCode).toBe(503)
+    expect(res.json()).toEqual({ status: 'unavailable' })
+  })
+})
+
+describe('web app serving', () => {
+  let webRoot: string
+  let web: FastifyInstance
+
+  beforeAll(async () => {
+    webRoot = await mkdtemp(join(tmpdir(), 'wepush-web-'))
+    await mkdir(join(webRoot, 'assets'))
+    await writeFile(join(webRoot, 'index.html'), '<!doctype html><div id="app"></div>')
+    await writeFile(join(webRoot, 'assets', 'main-abc123.js'), 'console.log(1)')
+  })
+  beforeEach(async () => {
+    web = await buildApp(ctx, { webRoot })
+  })
+  afterEach(() => web.close())
+  afterAll(() => rm(webRoot, { recursive: true, force: true }))
+
+  it('serves index.html at the root', async () => {
+    const res = await web.inject({ method: 'GET', url: '/' })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['content-type']).toContain('text/html')
+  })
+
+  it('falls back to index.html for client-side routes', async () => {
+    const res = await web.inject({ method: 'GET', url: '/advertiser/campaigns?tab=open' })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toContain('<div id="app">')
+  })
+
+  it('serves hashed assets as immutable', async () => {
+    const res = await web.inject({ method: 'GET', url: '/assets/main-abc123.js' })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['cache-control']).toContain('immutable')
+  })
+
+  it('404s missing files and unknown /api routes as problem+json', async () => {
+    for (const url of ['/assets/missing.js', '/api/nope']) {
+      const res = await web.inject({ method: 'GET', url })
+
+      expect(res.statusCode).toBe(404)
+      expect(res.json()).toMatchObject({ code: 'not_found' })
+    }
+  })
+
+  it('keeps the API working alongside the web app', async () => {
+    const res = await web.inject({ method: 'GET', url: '/api/advertisers' })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({ items: [] })
+  })
+})
 
 describe('public identity routes', () => {
   it('round-trips advertisers from the DB to the contract DTO', async () => {

@@ -36,6 +36,14 @@ pnpm db:seed    # optional, in another terminal: demo advertisers, creators, and
 
 Then open http://localhost:5173. You'll get a role picker; choose (or create) an Advertiser or a Creator to act as. There's no authentication. The API's dev OpenAPI UI is at http://localhost:5173/api/docs.
 
+### Production images locally
+
+```sh
+pnpm prod       # docker compose --profile prod up --build
+```
+
+This builds the `api` and `worker` targets of the root `Dockerfile` and runs them against the compose Postgres: `migrate` (a one-off from the api image) → `api` → `worker`. The api image also serves the built web app, so the UI and API share http://localhost:8080. `GET /healthz` is liveness, and `GET /readyz` checks the database (503 when it's unreachable). The OpenAPI UI is off in production. Stop it with `docker compose --profile prod down`.
+
 ### Environment variables
 
 All of these live in the root `.env`, and every process validates them at startup.
@@ -78,7 +86,7 @@ pnpm test:int        # integration only
 pnpm check           # lint → typecheck → test, the same gates CI runs
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, a migration drift check, tests with coverage, and the web build against a `postgres:18` service. To make `ci` a required check, turn on branch protection on `main`; that's a repo setting, not something in this repo.
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, a migration drift check, tests with coverage, and the web build against a `postgres:18` service. A second job, `images`, builds both Docker targets without pushing. To make `ci` a required check, turn on branch protection on `main`; that's a repo setting, not something in this repo.
 
 ## Marketplace design
 

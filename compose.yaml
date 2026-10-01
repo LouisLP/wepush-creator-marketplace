@@ -18,5 +18,39 @@ services:
       timeout: 3s
       retries: 30
 
+  # `docker compose --profile prod up --build`: the production images against the postgres above.
+  migrate:
+    profiles: [prod]
+    build: {context: ., target: api}
+    image: wepush/api
+    command: [node, packages/db/src/migrate.ts]
+    environment: &prod-env
+      DATABASE_URL: postgres://wepush:wepush@postgres:5432/wepush
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    profiles: [prod]
+    build: {context: ., target: api}
+    image: wepush/api
+    environment: *prod-env
+    ports:
+      - '8080:3000'
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/readyz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  worker:
+    profiles: [prod]
+    build: {context: ., target: worker}
+    image: wepush/worker
+    environment: *prod-env
+    depends_on:
+      api: {condition: service_healthy}
+
 volumes:
   pgdata:

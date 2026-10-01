@@ -9,18 +9,23 @@ import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from 'fast
 import { advertiserRoutes } from './modules/advertisers/routes.ts'
 import { advertiserCampaignRoutes } from './modules/campaigns/routes.ts'
 import { creatorProfileRoutes, creatorRoutes } from './modules/creators/routes.ts'
+import { healthRoutes } from './modules/health/routes.ts'
 import { advertiserActor, creatorActor } from './plugins/actor.ts'
 import { registerErrorHandling } from './plugins/error-handler.ts'
+import { registerWeb } from './plugins/web.ts'
 
 export interface AppDeps {
   repos: Repos
   uow: UnitOfWork
   clock: Clock
+  pingDb: () => Promise<void>
 }
 
 export interface AppOptions {
   logger?: FastifyServerOptions['logger']
   docs?: boolean
+  /** Built web app directory to serve with an SPA fallback (prod only; dev uses the Vite proxy). */
+  webRoot?: string
 }
 
 export async function buildApp(deps: AppDeps, opts: AppOptions = {}) {
@@ -36,7 +41,10 @@ export async function buildApp(deps: AppDeps, opts: AppOptions = {}) {
   app.addHook('onRequest', async (req, reply) => {
     reply.header('x-request-id', req.id)
   })
-  registerErrorHandling(app)
+  registerErrorHandling(app, { spaFallback: !!opts.webRoot })
+
+  if (opts.webRoot)
+    await registerWeb(app, opts.webRoot)
 
   if (opts.docs) {
     await app.register(swagger, {
@@ -46,6 +54,7 @@ export async function buildApp(deps: AppDeps, opts: AppOptions = {}) {
     await app.register(swaggerUi, { routePrefix: '/api/docs' })
   }
 
+  await app.register(healthRoutes(deps))
   await app.register(advertiserRoutes(deps))
   await app.register(creatorRoutes(deps))
 
