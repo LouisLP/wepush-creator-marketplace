@@ -98,6 +98,18 @@ _Avoid_: Average ER, benchmark ER
 The cost per thousand impressions an Advertiser aims to pay on a Campaign.
 _Avoid_: Max CPM, goal CPM
 
+**Suggested Fee**:
+The Fee at which a Creator's Effective CPM equals the Campaign's Target CPM, kept within the Fee Range; prices views only, not production.
+_Avoid_: Recommended price, fair price
+
+**Fee Range**:
+The lowest and highest Fee a Bid may ask on a Campaign: at least a flat platform floor, at most 3× the Target CPM's Fee for that Creator and never above the Budget.
+_Avoid_: Price bounds, limits
+
+**Fee Quote**:
+What a Creator is shown before bidding on a Campaign: their Estimated Impressions, Suggested Fee and Fee Range.
+_Avoid_: Estimate, offer
+
 ### Bidding
 
 **Bid**:
