@@ -128,6 +128,10 @@ _Avoid_: Offer, application, proposal, pitch
 The Creator's follower count, engagement rate, Estimated Impressions and Effective CPM as they stood when the Bid was placed; Closing judges the Bid on these, not the Creator's current profile.
 _Avoid_: Bid stats, frozen profile
 
+**Eligible Bid**:
+A Bid whose Bid Snapshot meets the Campaign's Requirements and whose Fee is within the Fee Range; only Eligible Bids compete for the Budget at Closing.
+_Avoid_: Valid bid, qualifying bid
+
 **Pending**:
 A Bid's state from placement until its Campaign's Closing.
 _Avoid_: Submitted, active, open
@@ -141,15 +145,19 @@ A Bid not selected at Closing, always with a Loss Reason.
 _Avoid_: Rejected, declined, failed
 
 **Loss Reason**:
-The explanation given to a Creator for why their Bid was Lost.
+The explanation given to a Creator for why their Bid was Lost, naming the first of these that applies: its Bid Snapshot did not meet the Requirements, its Fee was outside the Fee Range, or its Fee did not fit the Remaining Budget.
 _Avoid_: Rejection reason, status reason
 
+**Remaining Budget**:
+The part of a Campaign's Budget not yet taken by better-Ranked Winners at the point an Eligible Bid is considered; that Bid is Won if, and only if, its Fee fits within it.
+_Avoid_: Leftover, headroom, balance
+
 **Score**:
-The number Closing assigns each Bid to say how well it serves the Campaign's goals; Bids are considered best Score first.
+The number Closing assigns each Bid to say how well it serves the Campaign's goals: mostly its Effective CPM against the Target CPM, partly its Bid Snapshot's engagement rate against the Baseline Engagement Rate.
 _Avoid_: Rating, value, quality
 
 **Rank**:
-A Bid's position among its Campaign's Bids by Score at Closing, shown to both sides.
+A Bid's position among its Campaign's Bids at Closing — Eligible Bids before the rest, each by best Score — shown to both sides.
 _Avoid_: Position, place, order
 
 **Spent**:
