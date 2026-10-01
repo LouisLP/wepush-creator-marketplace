@@ -1,6 +1,10 @@
 import type { ApiError } from './client.ts'
 import { formatCents } from '@/lib/format.ts'
 
+export function feeRangeMessage(minCents: number, maxCents: number) {
+  return `Fee must be between ${formatCents(minCents)} and ${formatCents(maxCents)}.`
+}
+
 export function messageFor({ problem }: ApiError): string {
   switch (problem.code) {
     case 'network_error': return 'Can’t reach the server. Check your connection and try again.'
@@ -14,7 +18,7 @@ export function messageFor({ problem }: ApiError): string {
     case 'already_bid': return 'You’ve already bid on this campaign.'
     case 'handle_taken': return 'That handle is already taken.'
     case 'requirements_not_met': return 'Your profile doesn’t meet this campaign’s requirements.'
-    case 'fee_out_of_range': return `Fee must be between ${formatCents(problem.minCents)} and ${formatCents(problem.maxCents)}.`
+    case 'fee_out_of_range': return feeRangeMessage(problem.minCents, problem.maxCents)
     case 'deadline_in_past': return 'The bidding deadline must be in the future.'
     case 'internal_error': return `Something went wrong on our side (ref ${problem.requestId}).`
   }

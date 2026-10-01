@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CreatorBid, CreatorCampaign, LossReason, ScoreFactor } from '@wepush/contracts'
-import { formatCents, formatCount, formatDateTime, formatPercent, formatTimeLeft } from '@/lib/format.ts'
+import { formatCents, formatCount, formatDateTime, formatPercent, formatTimeLeft, formatVsTarget } from '@/lib/format.ts'
 import FactorBars from './FactorBars.vue'
 
 defineProps<{ bid: CreatorBid, campaign: CreatorCampaign }>()
@@ -16,11 +16,6 @@ const LOSS_COPY: Record<LossReason, string> = {
 const SCORE_COPY: Record<ScoreFactor['key'], { label: string, hint: string }> = {
   cpm_fit: { label: 'CPM fit', hint: 'Your Effective CPM against the Target CPM; lower scores higher' },
   engagement: { label: 'Engagement', hint: 'Your engagement rate when you bid, against the Platform baseline' },
-}
-
-function vsTarget(effectiveCpmCents: number, targetCpmCents: number) {
-  const pct = Math.round((effectiveCpmCents / targetCpmCents - 1) * 100)
-  return pct === 0 ? 'at target' : pct < 0 ? `${-pct}% under target` : `${pct}% over target`
 }
 </script>
 
@@ -52,7 +47,7 @@ function vsTarget(effectiveCpmCents: number, targetCpmCents: number) {
         <dt>Effective CPM</dt>
         <dd>
           {{ formatCents(bid.snapshot.effectiveCpmCents) }}
-          <small class="muted">vs {{ formatCents(campaign.targetCpmCents) }} Target, {{ vsTarget(bid.snapshot.effectiveCpmCents, campaign.targetCpmCents) }}</small>
+          <small class="muted">vs {{ formatCents(campaign.targetCpmCents) }} Target, {{ formatVsTarget(bid.snapshot.effectiveCpmCents, campaign.targetCpmCents) }}</small>
         </dd>
       </div>
       <div><dt>Estimated Impressions</dt><dd>{{ formatCount(bid.snapshot.estimatedImpressions) }}</dd></div>

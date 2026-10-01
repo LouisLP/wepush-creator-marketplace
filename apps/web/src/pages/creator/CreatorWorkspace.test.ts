@@ -144,6 +144,25 @@ describe('creator rail', () => {
     expect(items[1]!.text()).toContain('$90.00 · 3h left')
     expect(items[0]!.get('a').attributes('href')).toBe(`/creator/campaigns/${ID}`)
   })
+
+  it('refreshes My Bids once a Pending Bid’s deadline passes', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(new Date('2026-01-01T14:59:58Z'))
+    const fetch = stubApi()
+    const wrapper = mountWith(CreatorWorkspace)
+    await flushPromises()
+    const bidsCalls = () => fetch.mock.calls.filter(([url]) => url === '/api/creator/bids').length
+
+    expect(bidsCalls()).toBe(1)
+    const closed = myBids.map(b => ({ ...b, status: 'lost' as const, rank: 3 }))
+    fetch.mockImplementation(async (url: string) => Response.json({ items: url === '/api/creator/bids' ? closed : [matched] }))
+    await vi.advanceTimersByTimeAsync(5_000)
+    await flushPromises()
+
+    expect(bidsCalls()).toBe(2)
+    expect(wrapper.findAll('nav[aria-labelledby="my-bids-heading"] li')[1]!.text()).toContain('$90.00 · Lost · Rank #3')
+    wrapper.unmount()
+  })
 })
 
 describe('campaign review pane', () => {

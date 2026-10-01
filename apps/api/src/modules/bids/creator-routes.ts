@@ -12,7 +12,7 @@ export function creatorBidRoutes(deps: AppDeps): FastifyPluginAsync {
     const service = createCreatorBidService(deps)
 
     route(app, placeBid, async req =>
-      toCreatorBid(await service.place(creatorIdOf(req), req.params.id as CampaignId, req.body.feeCents as Cents)))
+      toCreatorBid(await service.place(creatorIdOf(req), req.params.id as CampaignId, req.body.feeCents as Cents), undefined))
 
     route(app, listMyBids, async req => ({
       items: (await service.listMine(creatorIdOf(req))).map(toMyBid),

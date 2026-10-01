@@ -37,7 +37,7 @@ export function createCreatorCampaignService({ repos, clock }: Pick<AppDeps, 're
       const [profile, campaign, bid] = await Promise.all([
         profileOf(creatorId),
         repos.campaigns.getWithAdvertiser(campaignId),
-        repos.bids.findOwn(campaignId, creatorId),
+        repos.bids.findByCampaignAndCreator(campaignId, creatorId),
       ])
       if (!campaign || !canReviewCampaign(profile, campaign, !!bid, clock.now()))
         throw new AppError('not_found', 'Campaign not found')

@@ -199,6 +199,17 @@ describe('bid outcome', () => {
     expect((await get('/api/creator/bids')).json().items).toEqual([expect.objectContaining({ status: 'lost', rank: 2 })])
   })
 
+  it('keeps the rival\'s Bid sealed once Closed', async () => {
+    const { campaign, rival } = await contested()
+    const rivalBid = (await listBids(ctx.db)).find(b => b.creatorId === rival)!
+
+    for (const res of [await get(`/api/creator/campaigns/${campaign.id}`), await get('/api/creator/bids')]) {
+      expect(res.body).not.toContain(rivalBid.id)
+      expect(res.body).not.toContain('6000')
+      expect(res.body).not.toMatch(/"(bids|bidCount|bidsCount|winners)"/)
+    }
+  })
+
   it('shows a Won Bid with no Loss Reason', async () => {
     const { campaign, rival } = await contested()
 

@@ -2,20 +2,19 @@
 import type { CreatorBid } from '@wepush/contracts'
 import type { Step } from '@/components/StepIndicator.vue'
 import { getCreatorCampaign } from '@wepush/contracts'
-import { computed, onUnmounted, shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { call } from '@/api'
 import BidComposer from '@/components/BidComposer.vue'
 import BidStatus from '@/components/BidStatus.vue'
 import RelevanceFactors from '@/components/RelevanceFactors.vue'
 import RequirementChecks from '@/components/RequirementChecks.vue'
 import StepIndicator from '@/components/StepIndicator.vue'
+import { isPastDeadline, usePollWhile } from '@/composables/usePollWhile.ts'
 import { useRequest } from '@/composables/useRequest.ts'
 import { formatCents, formatDateTime, formatPlatform, formatTimeLeft } from '@/lib/format.ts'
 import { useRefreshRail } from './refresh.ts'
 
 const props = defineProps<{ id: string }>()
-
-const OUTCOME_POLL_MS = 5_000
 
 const refreshRail = useRefreshRail()
 
@@ -40,16 +39,10 @@ function onPlaced(bid: CreatorBid) {
   refreshRail()
 }
 
-// The worker closes due Campaigns on its own poll; pick up the outcome once the deadline passes.
-const poll = setInterval(async () => {
-  const c = campaign.value
-  if (c?.bid?.status !== 'pending' || Date.now() < Date.parse(c.biddingDeadline) || review.loading.value)
-    return
-  await review.reload()
-  if (review.data.value?.bid?.status !== 'pending')
-    refreshRail()
-}, OUTCOME_POLL_MS)
-onUnmounted(() => clearInterval(poll))
+usePollWhile(
+  () => campaign.value?.bid?.status === 'pending' && isPastDeadline(campaign.value.biddingDeadline) && !review.loading.value,
+  review.reload,
+)
 </script>
 
 <template>

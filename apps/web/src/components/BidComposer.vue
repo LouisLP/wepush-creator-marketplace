@@ -2,8 +2,8 @@
 import type { CreatorBid, CreatorCampaign } from '@wepush/contracts'
 import { placeBid } from '@wepush/contracts'
 import { computed, shallowRef, useId } from 'vue'
-import { ApiError, call, fieldErrors, messageFor } from '@/api'
-import { formatCents, formatCount } from '@/lib/format.ts'
+import { ApiError, call, feeRangeMessage, fieldErrors, messageFor } from '@/api'
+import { formatCents, formatCount, formatVsTarget } from '@/lib/format.ts'
 
 const props = defineProps<{ campaign: CreatorCampaign }>()
 const emit = defineEmits<{ placed: [bid: CreatorBid], confirming: [boolean] }>()
@@ -15,17 +15,15 @@ const inRange = computed(() => Number.isFinite(feeCents.value) && feeCents.value
 const effectiveCpm = computed(() => Math.round(feeCents.value * 1000 / quote.value.estimatedImpressions))
 
 const vsTarget = computed(() => {
-  const pct = Math.round((effectiveCpm.value / props.campaign.targetCpmCents - 1) * 100)
-  if (pct === 0)
-    return 'at target'
-  return pct < 0 ? `${-pct}% under target: scores better` : `${pct}% over target: lower Score`
+  const target = props.campaign.targetCpmCents
+  const hint = effectiveCpm.value < target ? ': scores better' : effectiveCpm.value > target ? ': lower Score' : ''
+  return formatVsTarget(effectiveCpm.value, target) + hint
 })
 
 const confirming = shallowRef(false)
 const submitting = shallowRef(false)
 const serverError = shallowRef<string>()
-const rangeMessage = computed(() => `Fee must be between ${formatCents(quote.value.minFeeCents)} and ${formatCents(quote.value.maxFeeCents)}.`)
-const feeError = computed(() => serverError.value ?? (inRange.value ? undefined : rangeMessage.value))
+const feeError = computed(() => serverError.value ?? (inRange.value ? undefined : feeRangeMessage(quote.value.minFeeCents, quote.value.maxFeeCents)))
 const errorId = useId()
 
 function setConfirming(value: boolean) {

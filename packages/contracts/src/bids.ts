@@ -1,17 +1,9 @@
-import type { ScoreFactorKey } from '@wepush/domain'
 import { SCORE_WEIGHTS } from '@wepush/domain'
 import { z } from 'zod'
 import { defineEndpoint } from './endpoint.ts'
-import { BidStatusSchema, CentsSchema, EngagementRateSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema } from './primitives.ts'
+import { BidStatusSchema, CentsSchema, EngagementRateSchema, factorSchema, IdSchema, IsoDateTimeSchema, listOf, LossReasonSchema } from './primitives.ts'
 
-const SCORE_FACTOR_KEYS = Object.keys(SCORE_WEIGHTS) as [ScoreFactorKey, ...ScoreFactorKey[]]
-
-export const ScoreFactorSchema = z.object({
-  key: z.enum(SCORE_FACTOR_KEYS),
-  value: z.number().min(0).max(1),
-  weight: z.number(),
-  contribution: z.number(),
-})
+export const ScoreFactorSchema = factorSchema(SCORE_WEIGHTS)
 export type ScoreFactor = z.infer<typeof ScoreFactorSchema>
 
 export const BidSnapshotSchema = z.object({

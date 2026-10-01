@@ -33,7 +33,7 @@ export function createCreatorBidService({ repos, uow, clock }: Pick<AppDeps, 're
           campaign,
           feeCents,
           now,
-          alreadyBid: !!(await tx.bids.findOwn(campaignId, creatorId)),
+          alreadyBid: !!(await tx.bids.findByCampaignAndCreator(campaignId, creatorId)),
         })
         if (!placement.ok)
           throw toAppError(placement.error)

@@ -38,6 +38,7 @@ function toBid(row: Row) {
   }
 }
 export type Bid = ReturnType<typeof toBid>
+export type BidWithCampaign = Bid & { campaignTitle: string, biddingDeadline: Date }
 
 export interface NewBid {
   campaignId: CampaignId
@@ -54,13 +55,12 @@ export function createBidRepo(exec: DbExecutor) {
       return rows.map(toPendingBid)
     },
 
-    async findOwn(campaignId: CampaignId, creatorId: CreatorId) {
+    async findByCampaignAndCreator(campaignId: CampaignId, creatorId: CreatorId) {
       const [row] = await exec.select().from(bids).where(and(eq(bids.campaignId, campaignId), eq(bids.creatorId, creatorId)))
       return row && toBid(row)
     },
 
-    /** Newest first, with the Campaign's title and Bidding Deadline. */
-    async listByCreator(creatorId: CreatorId) {
+    async listByCreator(creatorId: CreatorId): Promise<BidWithCampaign[]> {
       const rows = await exec.select({ bid: bids, campaignTitle: campaigns.title, biddingDeadline: campaigns.biddingDeadline })
         .from(bids)
         .innerJoin(campaigns, eq(campaigns.id, bids.campaignId))

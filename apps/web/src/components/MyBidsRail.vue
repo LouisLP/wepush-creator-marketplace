@@ -2,11 +2,17 @@
 import type { MyBid } from '@wepush/contracts'
 import { listMyBids } from '@wepush/contracts'
 import { call } from '@/api'
+import { isPastDeadline, usePollWhile } from '@/composables/usePollWhile.ts'
 import { useRequest } from '@/composables/useRequest.ts'
 import { formatCents, formatTimeLeft } from '@/lib/format.ts'
 
 const bids = useRequest(() => call(listMyBids))
 defineExpose({ reload: bids.reload })
+
+usePollWhile(
+  () => !bids.loading.value && !!bids.data.value?.items.some(b => b.status === 'pending' && isPastDeadline(b.biddingDeadline)),
+  bids.reload,
+)
 
 function detail(b: MyBid) {
   if (b.status === 'pending')

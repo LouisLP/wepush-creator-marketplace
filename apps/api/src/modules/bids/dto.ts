@@ -1,8 +1,10 @@
 import type { CreatorBid, MyBid, ScoreFactor } from '@wepush/contracts'
-import type { Bid } from '@wepush/db'
+import type { Bid, BidWithCampaign } from '@wepush/db'
 
-/** `scoringVersion` comes from the Campaign's outcome; only read once the Bid has one. */
-export function toCreatorBid(b: Bid, scoringVersion?: string): CreatorBid {
+/** `scoringVersion` is the Campaign's; Closing writes it in the same transaction as the Bid's outcome. */
+export function toCreatorBid(b: Bid, scoringVersion: string | undefined): CreatorBid {
+  if (b.outcome && scoringVersion === undefined)
+    throw new Error(`Bid ${b.id} has an outcome but its Campaign has no Scoring Version`)
   return {
     id: b.id,
     feeCents: b.feeCents,
@@ -20,7 +22,7 @@ export function toCreatorBid(b: Bid, scoringVersion?: string): CreatorBid {
   }
 }
 
-export function toMyBid(b: Bid & { campaignTitle: string, biddingDeadline: Date }): MyBid {
+export function toMyBid(b: BidWithCampaign): MyBid {
   return {
     id: b.id,
     campaignId: b.campaignId,
