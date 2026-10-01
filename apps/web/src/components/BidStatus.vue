@@ -1,114 +1,77 @@
 <script setup lang="ts">
-import type { CreatorBid, CreatorCampaign, LossReason } from '@wepush/contracts'
-import { formatCents, formatCount, formatDateTime, formatPercent, formatTimeLeft, formatVsTarget } from '@/lib/format.ts'
-import ScoreFactors from './ScoreFactors.vue'
+import type { CreatorBid, CreatorCampaign } from '@wepush/contracts'
+import IconCalendarClock from '~icons/lucide/calendar-clock'
+import { formatCents, formatDateTime, formatLossReason, formatTimeLeft } from '@/lib/format.ts'
+import BidStatusBadge from './BidStatusBadge.vue'
+import CpmVsTargetBadge from './CpmVsTargetBadge.vue'
 
 defineProps<{ bid: CreatorBid, campaign: CreatorCampaign }>()
 
-const STATUS_LABEL: Record<CreatorBid['status'], string> = { pending: 'Pending', won: 'Won', lost: 'Lost' }
-
-const LOSS_COPY: Record<LossReason, string> = {
-  requirements_not_met: 'Your profile at the time you bid didn’t meet the Requirements.',
-  fee_out_of_range: 'Your Fee was outside the Fee Range.',
-  over_budget: 'Your Fee didn’t fit the Remaining Budget.',
+function remainingNote({ outcome }: CreatorBid) {
+  if (outcome?.lossReason !== 'over_budget' || outcome.remainingBudgetCents === null)
+    return ''
+  return `: ${formatCents(outcome.remainingBudgetCents)} left when your Bid was reached.`
 }
 </script>
 
 <template>
-  <div class="status">
-    <p class="badge" :class="bid.status">
-      {{ STATUS_LABEL[bid.status] }}<template v-if="bid.outcome">
-        · Rank #{{ bid.outcome.rank }}
+  <div class="bid-status">
+    <p class="row">
+      <BidStatusBadge :status="bid.status" :rank="bid.outcome?.rank" />
+    </p>
+
+    <p class="row facts">
+      <span>Your Fee <strong>{{ formatCents(bid.feeCents) }}</strong></span>
+      <span>
+        Effective CPM <strong>{{ formatCents(bid.snapshot.effectiveCpmCents) }}</strong>
+        <span class="muted"> vs {{ formatCents(campaign.targetCpmCents) }}</span>
+      </span>
+      <CpmVsTargetBadge :cpm-cents="bid.snapshot.effectiveCpmCents" :target-cpm-cents="campaign.targetCpmCents" />
+      <template v-if="bid.outcome">
+        <span>Rank <strong>#{{ bid.outcome.rank }}</strong></span>
+        <span>Score <strong>{{ bid.outcome.score }}</strong></span>
       </template>
     </p>
 
     <p v-if="!bid.outcome" class="muted">
-      Closes {{ formatDateTime(campaign.biddingDeadline) }} ({{ formatTimeLeft(campaign.biddingDeadline) }}).
-      Winners are picked automatically then; nothing to do until then.
+      <IconCalendarClock aria-hidden="true" />
+      Winners are picked at the Bidding Deadline, {{ formatDateTime(campaign.biddingDeadline) }} ({{ formatTimeLeft(campaign.biddingDeadline) }}).
     </p>
     <p v-else-if="bid.status === 'won'">
       You’re a Winner: make one Post for {{ formatCents(bid.feeCents) }}.
     </p>
     <p v-else-if="bid.outcome.lossReason" class="loss">
-      {{ LOSS_COPY[bid.outcome.lossReason] }}
-      <template v-if="bid.outcome.lossReason === 'over_budget' && bid.outcome.remainingBudgetCents !== null">
-        {{ formatCents(bid.outcome.remainingBudgetCents) }} was left when your Bid was reached; you asked {{ formatCents(bid.feeCents) }}.
-      </template>
+      {{ formatLossReason(bid.outcome.lossReason) }}{{ remainingNote(bid) }}
     </p>
-
-    <dl class="snapshot">
-      <div><dt>Your Fee</dt><dd>{{ formatCents(bid.feeCents) }}</dd></div>
-      <div>
-        <dt>Effective CPM</dt>
-        <dd>
-          {{ formatCents(bid.snapshot.effectiveCpmCents) }}
-          <small class="muted">vs {{ formatCents(campaign.targetCpmCents) }} Target, {{ formatVsTarget(bid.snapshot.effectiveCpmCents, campaign.targetCpmCents) }}</small>
-        </dd>
-      </div>
-      <div><dt>Estimated Impressions</dt><dd>{{ formatCount(bid.snapshot.estimatedImpressions) }}</dd></div>
-      <div>
-        <dt>Bid Snapshot</dt>
-        <dd>{{ formatCount(bid.snapshot.followers) }} followers · {{ formatPercent(bid.snapshot.engagementRate) }}</dd>
-      </div>
-      <div><dt>Placed</dt><dd>{{ formatDateTime(bid.placedAt) }}</dd></div>
-    </dl>
-
-    <template v-if="bid.outcome">
-      <ScoreFactors :score="bid.outcome.score" :factors="bid.outcome.factors" />
-      <small class="muted">
-        Scoring Version {{ bid.outcome.scoringVersion }}. Rank puts Eligible Bids first, then higher Score, lower Fee, earlier Bid.
-      </small>
-    </template>
   </div>
 </template>
 
 <style scoped>
-.status {
+.bid-status {
   display: grid;
   gap: var(--space-md);
 }
 
-.badge {
-  justify-self: start;
-  padding: var(--space-2xs) var(--space-sm);
-  border-radius: var(--radius-full);
-  background-color: var(--color-accent-subtle-bg);
-  color: var(--color-accent-subtle-fg);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-lg);
 }
 
-.badge.won {
-  background-color: var(--color-success-subtle-bg);
-  color: var(--color-success-subtle-fg);
+strong {
+  font-variant-numeric: tabular-nums;
 }
 
-.badge.lost {
-  background-color: var(--color-danger-subtle-bg);
-  color: var(--color-danger-subtle-fg);
+.facts {
+  gap: var(--space-xs) var(--space-md);
+}
+
+svg {
+  vertical-align: -0.125em;
 }
 
 .loss {
   color: var(--color-danger-subtle-fg);
-}
-
-.snapshot {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: var(--space-md);
-}
-
-dt {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-dd {
-  font-weight: var(--font-weight-semibold);
-}
-
-dd small {
-  display: block;
-  font-weight: var(--font-weight-normal);
 }
 </style>

@@ -1,7 +1,9 @@
 import type { CreatorBid, CreatorCampaign, MatchedCampaign, MyBid } from '@wepush/contracts'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { TooltipProvider } from 'reka-ui'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import router from '@/router'
 import CampaignReviewPage from './CampaignReviewPage.vue'
 import CreatorWorkspace from './CreatorWorkspace.vue'
@@ -107,7 +109,8 @@ async function mountWith(component: object, props: Record<string, unknown> = {})
   const pinia = createPinia()
   setActivePinia(pinia)
   await router.push(`/creators/${CREATOR_ID}`)
-  return mount(component, { props, global: { plugins: [pinia, router], stubs: { RouterView: true } } })
+  const host = () => h(TooltipProvider, () => h(component, props))
+  return mount(host, { global: { plugins: [pinia, router], stubs: { RouterView: true } } })
 }
 
 beforeEach(() => {
@@ -121,28 +124,39 @@ afterEach(() => {
 })
 
 describe('creator rail', () => {
-  it('shows Relevance, title, Suggested Fee and time left, linking to the review pane', async () => {
+  it('shows one-line Matched rows: title and Relevance chip, linking to the Campaign', async () => {
     stubApi()
     const wrapper = await mountWith(CreatorWorkspace)
     await flushPromises()
 
     const item = wrapper.get('nav[aria-labelledby="matched-heading"] li')
-    expect(item.text()).toContain('75')
-    expect(item.text()).toContain('Snack launch')
-    expect(item.text()).toContain('$75.00 suggested · 3d left')
+    expect(item.get('.rail-title').text()).toBe('Snack launch')
+    expect(item.get('.badge').text()).toBe('Relevance75')
+    expect(item.text()).not.toContain('suggested')
     expect(item.get('a').attributes('href')).toBe(`/creators/${CREATOR_ID}/campaigns/${ID}`)
   })
 
-  it('lists My Bids with a status dot, Fee and Rank or time left', async () => {
+  it('lists My Bids with title and an icon-only status named for screen readers', async () => {
     stubApi()
     const wrapper = await mountWith(CreatorWorkspace)
     await flushPromises()
 
     const items = wrapper.findAll('nav[aria-labelledby="my-bids-heading"] li')
-    expect(items.map(li => li.get('.dot').classes())).toEqual([['dot', 'lost'], ['dot', 'pending']])
-    expect(items[0]!.text()).toContain('$60.00 · Lost · Rank #2')
-    expect(items[1]!.text()).toContain('$90.00 · 3h left')
+    expect(items.map(li => li.get('.status').attributes('data-status'))).toEqual(['lost', 'pending'])
+    expect(items.map(li => li.get('.status .visually-hidden').text())).toEqual(['Lost · Rank #2', 'Pending'])
+    expect(items[0]!.get('.status svg').attributes('aria-hidden')).toBe('true')
+    expect(items[0]!.get('.rail-title').text()).toBe('Snack launch')
     expect(items[0]!.get('a').attributes('href')).toBe(`/creators/${CREATOR_ID}/campaigns/${ID}`)
+  })
+
+  it('marks the open Campaign’s row as the current page', async () => {
+    stubApi()
+    const wrapper = await mountWith(CreatorWorkspace)
+    await router.push(`/creators/${CREATOR_ID}/campaigns/${ID}`)
+    await flushPromises()
+
+    expect(wrapper.get('nav[aria-labelledby="matched-heading"] a').attributes('aria-current')).toBe('page')
+    expect(wrapper.findAll('nav[aria-labelledby="my-bids-heading"] a').map(a => a.attributes('aria-current'))).toEqual(['page', undefined])
   })
 
   it('refreshes My Bids once a Pending Bid’s deadline passes', async () => {
@@ -160,26 +174,52 @@ describe('creator rail', () => {
     await flushPromises()
 
     expect(bidsCalls()).toBe(2)
-    expect(wrapper.findAll('nav[aria-labelledby="my-bids-heading"] li')[1]!.text()).toContain('$90.00 · Lost · Rank #3')
+    expect(wrapper.findAll('nav[aria-labelledby="my-bids-heading"] li')[1]!.text()).toContain('Lost · Rank #3')
     wrapper.unmount()
   })
 })
 
 describe('campaign review pane', () => {
-  it('shows the Fee Quote, every Requirement checked and the Relevance factors', async () => {
+  it('heads the page with advertiser, state and platform badges, and step dots naming only the current step', async () => {
+    stubApi()
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
+    await flushPromises()
+
+    expect(wrapper.get('h1').text()).toBe('Snack launch')
+    expect(wrapper.get('.meta').text()).toContain('Glow Cosmetics')
+    expect(wrapper.findAll('.meta .badge').map(b => b.text())).toEqual(['3d left', 'TikTok'])
+    expect(wrapper.findAll('.steps li')).toHaveLength(4)
+    expect(wrapper.get('[aria-current="step"]').text()).toBe('Review')
+    expect(wrapper.findAll('.steps li:not([aria-current]) .visually-hidden').map(s => s.text())).toEqual(['Bid', 'Track', 'Outcome'])
+  })
+
+  it('shows the fit row: Relevance chip and a ✓/✗ chip per Requirement', async () => {
     const fetch = stubApi()
     const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
     expect(fetch).toHaveBeenCalledWith(`/api/creator/campaigns/${ID}`, expect.anything())
-    const text = wrapper.text()
-    expect(text).toContain('Show the snack.')
-    expect(text).toContain('$75.00')
-    expect(text).toContain('$10.00 – $225.00')
-    expect(wrapper.findAll('.checks li').map(li => li.classes())).toEqual([['pass'], ['pass'], ['miss'], ['pass']])
-    expect(text).toContain('At least 60K followers')
+    expect(wrapper.get('.fit .relevance').text()).toBe('Relevance 75')
+    const checks = wrapper.findAll('.checks li')
+    expect(checks.map(li => li.classes())).toEqual([['pass'], ['pass'], ['miss'], ['pass']])
+    expect(checks[2]!.text()).toContain('At least 60K followers')
+    expect(checks[2]!.get('.visually-hidden').text()).toBe('Not met:')
+  })
+
+  it('collapses Brief (with a one-line preview), Why this Relevance and Terms', async () => {
+    stubApi()
+    const wrapper = await mountWith(CampaignReviewPage, { id: ID })
+    await flushPromises()
+
+    const triggers = wrapper.findAll('.disclosure button')
+    expect(triggers.map(t => t.attributes('aria-expanded'))).toEqual(['false', 'false', 'false'])
+    expect(triggers.map(t => t.text())).toEqual(['BriefShow the snack.', 'Why this Relevance75', 'Terms$1,000.00 · $10.00 CPM'])
+    expect(wrapper.findAll('meter')).toHaveLength(0)
+
+    await triggers[1]!.trigger('click')
     expect(wrapper.findAll('meter')).toHaveLength(2)
-    expect(wrapper.get('[aria-current="step"]').text()).toContain('Review')
+    await triggers[2]!.trigger('click')
+    expect(wrapper.text()).toContain('Target CPM$10.00')
   })
 
   it('shows not-found when the Campaign isn’t visible', async () => {
@@ -199,14 +239,31 @@ describe('placing a Bid', () => {
     return { fetch, wrapper, fee: wrapper.get('input[name="fee"]') }
   }
 
-  it('pre-fills the Suggested Fee and shows live Effective CPM vs Target', async () => {
+  it('shows the quote line and pre-fills the Suggested Fee with a live CPM-vs-Target chip', async () => {
     const { wrapper, fee } = await mountComposer()
 
+    expect(wrapper.findAll('.quote > span').map(s => s.text())).toEqual(['7.5K Est. Impressions', 'Suggested $75.00', 'Range $10.00 – $225.00'])
     expect((fee.element as HTMLInputElement).value).toBe('75')
-    expect(wrapper.get('.cpm').text()).toContain('Effective CPM $10.00 vs Target $10.00 — at target')
+    expect(wrapper.get('.cpm').text()).toContain('Effective CPM $10.00')
+    expect(wrapper.get('.cpm .badge').text()).toBe('at target')
 
     await fee.setValue('60')
-    expect(wrapper.get('.cpm').text()).toContain('Effective CPM $8.00 vs Target $10.00 — 20% under target')
+    expect(wrapper.get('.cpm').text()).toContain('Effective CPM $8.00')
+    expect(wrapper.get('.cpm .badge').text()).toBe('20% under target')
+    expect(wrapper.get('.cpm .badge').attributes('data-tone')).toBe('success')
+
+    await fee.setValue('150')
+    expect(wrapper.get('.cpm .badge').text()).toBe('100% over target')
+    expect(wrapper.get('.cpm .badge').attributes('data-tone')).toBe('warning')
+  })
+
+  it('keeps the bid rules behind a labelled info button', async () => {
+    const { wrapper } = await mountComposer()
+
+    const info = wrapper.get('button[aria-label="Bid rules"]')
+    const rules = wrapper.get(`#${info.attributes('aria-describedby')}`)
+    expect(rules.text()).toContain('Bids are final and sealed')
+    expect(rules.classes()).toContain('visually-hidden')
   })
 
   it('blocks a Fee outside the Fee Range, naming the range', async () => {
@@ -232,10 +289,10 @@ describe('placing a Bid', () => {
 
     expect(fetch).toHaveBeenCalledWith(`/api/creator/campaigns/${ID}/bids`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ feeCents: 6_000 }) }))
     expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.get('.badge').text()).toBe('Pending')
-    expect(wrapper.get('[aria-current="step"]').text()).toContain('Track')
-    expect(wrapper.text()).toContain('$8.00')
-    expect(wrapper.text()).toContain('50K followers · 5%')
+    expect(wrapper.get('h2').text()).toBe('Your Bid')
+    expect(wrapper.get('.status').text()).toBe('Pending')
+    expect(wrapper.get('[aria-current="step"]').text()).toBe('Track')
+    expect(wrapper.get('.facts').text()).toContain('Effective CPM $8.00')
   })
 
   it.each([
@@ -258,31 +315,38 @@ describe('placing a Bid', () => {
 })
 
 describe('tracking a Bid', () => {
-  it('shows a Pending Bid with Fee, Effective CPM vs Target, Snapshot and closes-at', async () => {
+  it('shows a Pending Bid with Fee, the CPM-vs-Target chip and when Winners are picked', async () => {
     stubApi({ detail: { ...review, bid: pendingBid } })
     const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
-    expect(wrapper.get('[aria-current="step"]').text()).toContain('Track')
+    expect(wrapper.get('[aria-current="step"]').text()).toBe('Track')
     expect(wrapper.find('form').exists()).toBe(false)
-    const text = wrapper.text()
-    expect(text).toContain('$60.00')
-    expect(text).toContain('$8.00 vs $10.00 Target, 20% under target')
-    expect(text).toContain('50K followers · 5%')
-    expect(text).toContain('3d left')
+    const facts = wrapper.get('.facts')
+    expect(facts.text()).toContain('Your Fee $60.00')
+    expect(facts.text()).toContain('Effective CPM $8.00 vs $10.00')
+    expect(facts.get('.badge').text()).toBe('20% under target')
+    expect(facts.text()).not.toContain('Rank')
+    expect(wrapper.get('.action').text()).toContain('3d left')
   })
 
-  it('shows a Lost outcome with Rank, Score factors and the over-budget Loss Reason', async () => {
+  it('shows a Lost outcome with Rank, Score, a one-line Loss Reason and Score factors collapsed', async () => {
     stubApi({ detail: { ...review, status: 'closed', bid: lostBid } })
     const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
-    expect(wrapper.get('[aria-current="step"]').text()).toContain('Outcome')
-    expect(wrapper.get('.badge').text()).toBe('Lost · Rank #2')
-    expect(wrapper.get('.loss').text()).toBe('Your Fee didn’t fit the Remaining Budget. $40.00 was left when your Bid was reached; you asked $60.00.')
-    expect(wrapper.text()).toContain('Score 52.5')
+    expect(wrapper.get('[aria-current="step"]').text()).toBe('Outcome')
+    expect(wrapper.findAll('.meta .badge').map(b => b.text())).toEqual(['Closed', 'TikTok'])
+    expect(wrapper.get('.action .status').text()).toBe('Lost · Rank #2')
+    expect(wrapper.get('.facts').text()).toContain('Rank #2')
+    expect(wrapper.get('.facts').text()).toContain('Score 52.5')
+    expect(wrapper.get('.loss').text()).toBe('Fee didn’t fit the Remaining Budget: $40.00 left when your Bid was reached.')
+
+    const why = wrapper.findAll('.disclosure button')[1]!
+    expect(why.text()).toBe('Why this Score52.5')
+    await why.trigger('click')
+    expect(wrapper.findAll('meter')).toHaveLength(2)
     expect(wrapper.text()).toContain('Scoring Version v1')
-    expect(wrapper.findAll('meter')).toHaveLength(4)
   })
 
   it('picks up the outcome once the worker closes the Campaign after its deadline', async () => {
@@ -298,7 +362,7 @@ describe('tracking a Bid', () => {
     await vi.advanceTimersByTimeAsync(5_000)
     await flushPromises()
 
-    expect(wrapper.get('.badge').text()).toBe('Lost · Rank #2')
+    expect(wrapper.get('.action .status').text()).toBe('Lost · Rank #2')
     wrapper.unmount()
   })
 
@@ -308,7 +372,7 @@ describe('tracking a Bid', () => {
     const wrapper = await mountWith(CampaignReviewPage, { id: ID })
     await flushPromises()
 
-    expect(wrapper.get('.badge').text()).toBe('Won · Rank #1')
+    expect(wrapper.get('.action .status').text()).toBe('Won · Rank #1')
     expect(wrapper.text()).toContain('You’re a Winner: make one Post for $60.00.')
     expect(wrapper.find('.loss').exists()).toBe(false)
   })
