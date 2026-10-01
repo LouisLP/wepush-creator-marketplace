@@ -48,7 +48,6 @@ const campaign = computed(() => review.data.value)
         <div><dt>Budget</dt><dd>{{ formatCents(campaign.budgetCents) }}</dd></div>
         <div><dt>Target CPM</dt><dd>{{ formatCents(campaign.targetCpmCents) }}</dd></div>
         <div><dt>Bidding Deadline</dt><dd>{{ formatDateTime(campaign.biddingDeadline) }}</dd></div>
-        <div><dt>Deliverable</dt><dd>1 Post</dd></div>
       </dl>
     </section>
 

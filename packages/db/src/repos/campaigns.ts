@@ -40,6 +40,10 @@ function toCampaignWithAdvertiser(row: { campaign: Row, advertiserName: string }
 export type CampaignWithAdvertiser = ReturnType<typeof toCampaignWithAdvertiser>
 
 export function createCampaignRepo(exec: DbExecutor) {
+  const withAdvertiser = () => exec.select({ campaign: campaigns, advertiserName: advertisers.name })
+    .from(campaigns)
+    .innerJoin(advertisers, eq(advertisers.id, campaigns.advertiserId))
+
   return {
     async listByAdvertiser(advertiserId: AdvertiserId) {
       const rows = await exec.select().from(campaigns).where(eq(campaigns.advertiserId, advertiserId)).orderBy(desc(campaigns.createdAt), desc(campaigns.id))
@@ -52,24 +56,18 @@ export function createCampaignRepo(exec: DbExecutor) {
     },
 
     async getWithAdvertiser(id: CampaignId) {
-      const [row] = await exec.select({ campaign: campaigns, advertiserName: advertisers.name })
-        .from(campaigns)
-        .innerJoin(advertisers, eq(advertisers.id, campaigns.advertiserId))
-        .where(eq(campaigns.id, id))
+      const [row] = await withAdvertiser().where(eq(campaigns.id, id))
       return row && toCampaignWithAdvertiser(row)
     },
 
     /** Open, pre-deadline campaigns on `platform` the creator hasn't bid on; Matching decides the rest. */
-    async listBiddable(input: { creatorId: CreatorId, platform: Platform, now: Date }) {
-      const rows = await exec.select({ campaign: campaigns, advertiserName: advertisers.name })
-        .from(campaigns)
-        .innerJoin(advertisers, eq(advertisers.id, campaigns.advertiserId))
-        .where(and(
-          eq(campaigns.status, 'open'),
-          gt(campaigns.biddingDeadline, input.now),
-          eq(campaigns.platform, input.platform),
-          notExists(exec.select({ id: bids.id }).from(bids).where(and(eq(bids.campaignId, campaigns.id), eq(bids.creatorId, input.creatorId)))),
-        ))
+    async listMatchCandidates(input: { creatorId: CreatorId, platform: Platform, now: Date }) {
+      const rows = await withAdvertiser().where(and(
+        eq(campaigns.status, 'open'),
+        gt(campaigns.biddingDeadline, input.now),
+        eq(campaigns.platform, input.platform),
+        notExists(exec.select({ id: bids.id }).from(bids).where(and(eq(bids.campaignId, campaigns.id), eq(bids.creatorId, input.creatorId)))),
+      ))
       return rows.map(toCampaignWithAdvertiser)
     },
 

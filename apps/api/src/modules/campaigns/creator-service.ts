@@ -1,7 +1,7 @@
 import type { CampaignWithAdvertiser } from '@wepush/db'
 import type { CampaignId, CreatorId, CreatorProfile } from '@wepush/domain'
 import type { AppDeps } from '../../app.ts'
-import { byRelevance, checkRequirements, feeQuote, isMatchedCampaign, relevance } from '@wepush/domain'
+import { byRelevance, canReviewCampaign, checkRequirements, feeQuote, isMatchedCampaign, relevance } from '@wepush/domain'
 import { AppError } from '../../errors.ts'
 
 function assess(profile: CreatorProfile, campaign: CampaignWithAdvertiser) {
@@ -26,21 +26,20 @@ export function createCreatorCampaignService({ repos, clock }: Pick<AppDeps, 're
     async listMatched(creatorId: CreatorId) {
       const profile = await profileOf(creatorId)
       const now = clock.now()
-      const candidates = await repos.campaigns.listBiddable({ creatorId, platform: profile.platform, now })
+      const candidates = await repos.campaigns.listMatchCandidates({ creatorId, platform: profile.platform, now })
       return candidates
         .filter(c => isMatchedCampaign(profile, c, now))
         .map(c => assess(profile, c))
         .sort(byRelevance)
     },
 
-    /** Visible while Matched, or forever once the creator has bid on it. */
     async getForReview(creatorId: CreatorId, campaignId: CampaignId) {
       const [profile, campaign, hasBid] = await Promise.all([
         profileOf(creatorId),
         repos.campaigns.getWithAdvertiser(campaignId),
         repos.bids.exists(campaignId, creatorId),
       ])
-      if (!campaign || !(hasBid || isMatchedCampaign(profile, campaign, clock.now())))
+      if (!campaign || !canReviewCampaign(profile, campaign, hasBid, clock.now()))
         throw new AppError('not_found', 'Campaign not found')
       return {
         ...assess(profile, campaign),

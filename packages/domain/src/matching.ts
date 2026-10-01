@@ -39,3 +39,8 @@ export function isMatchedCampaign(profile: CreatorProfile, { status, terms }: Ca
     && now < terms.biddingDeadline
     && checkRequirements(profile, terms.requirements).every(c => c.passed)
 }
+
+/** A Creator may review a Campaign while it's Matched, or for good once they've bid on it. */
+export function canReviewCampaign(profile: CreatorProfile, campaign: CampaignState, hasBid: boolean, now: Date): boolean {
+  return hasBid || isMatchedCampaign(profile, campaign, now)
+}

@@ -1,6 +1,6 @@
 import type { CampaignId, CampaignTerms, CreatorProfile } from './types.ts'
 import { describe, expect, it } from 'vitest'
-import { checkRequirements, isMatchedCampaign } from './matching.ts'
+import { canReviewCampaign, checkRequirements, isMatchedCampaign } from './matching.ts'
 import { cents } from './types.ts'
 
 const creator: CreatorProfile = { platform: 'tiktok', category: 'food', followers: 10_000, engagementRate: 0.04 }
@@ -59,5 +59,21 @@ describe('isMatchedCampaign', () => {
 
   it('does not match when a single Requirement is missed', () => {
     expect(isMatchedCampaign({ ...creator, followers: 9_999 }, { status: 'open', terms }, before)).toBe(false)
+  })
+})
+
+describe('canReviewCampaign', () => {
+  const closed = { status: 'closed', terms } as const
+
+  it('allows a Matched Campaign without a Bid', () => {
+    expect(canReviewCampaign(creator, { status: 'open', terms }, false, before)).toBe(true)
+  })
+
+  it('hides an unmatched Campaign without a Bid', () => {
+    expect(canReviewCampaign(creator, closed, false, before)).toBe(false)
+  })
+
+  it('keeps a Campaign reviewable once bid on, even after it stops matching', () => {
+    expect(canReviewCampaign({ ...creator, followers: 0 }, closed, true, before)).toBe(true)
   })
 })
