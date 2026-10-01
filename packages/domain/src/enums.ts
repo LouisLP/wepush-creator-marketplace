@@ -21,6 +21,6 @@ export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number]
 export const BID_STATUSES = ['pending', 'won', 'lost'] as const
 export type BidStatus = (typeof BID_STATUSES)[number]
 
-// Full set decided in Map 2.
-export const LOSS_REASONS = ['over_budget'] as const
+// In precedence order: the first that applies is the one given.
+export const LOSS_REASONS = ['requirements_not_met', 'fee_out_of_range', 'over_budget'] as const
 export type LossReason = (typeof LOSS_REASONS)[number]

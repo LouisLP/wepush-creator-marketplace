@@ -65,7 +65,7 @@ An Open Campaign, before its Bidding Deadline, whose every Requirement a given C
 _Avoid_: Eligible campaign, recommendation, feed item
 
 **Relevance**:
-How well a Matched Campaign suits a given Creator, weighing its Target CPM against the Platform's typical range and its Budget Fit; orders the Creator's Matched Campaigns.
+How well a Matched Campaign suits a given Creator, weighing where its Target CPM sits in the Platform's CPM Range and its Budget Fit; orders the Creator's Matched Campaigns.
 _Avoid_: Rank (reserved for Bids), match score, fit score
 
 **Budget Fit**:
@@ -97,6 +97,10 @@ _Avoid_: View rate
 **Baseline Engagement Rate**:
 The reference engagement rate for a Platform that a Creator's engagement rate is measured against.
 _Avoid_: Average ER, benchmark ER
+
+**CPM Range**:
+The span of CPMs typically paid for Posts on a Platform, from low to high; a fixed reference, not derived from Campaigns on the marketplace.
+_Avoid_: Market rate, benchmark CPM
 
 **Target CPM**:
 The cost per thousand impressions an Advertiser aims to pay on a Campaign.

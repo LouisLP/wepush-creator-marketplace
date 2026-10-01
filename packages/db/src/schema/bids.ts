@@ -22,11 +22,13 @@ export const bids = pgTable('bids', {
   score: doublePrecision(),
   rank: integer(),
   lossReason: lossReason(),
+  remainingBudgetCents: bigint({ mode: 'number' }),
   scoreFactors: jsonb().$type<Factor[]>(),
   ...timestamps,
 }, t => [
   unique('bids_campaign_creator_unique').on(t.campaignId, t.creatorId),
   index('bids_creator_id_idx').on(t.creatorId),
   check('bids_fee_check', sql`${t.feeCents} > 0`),
+  check('bids_remaining_budget_check', sql`${t.remainingBudgetCents} >= 0`),
   check('bids_loss_reason_check', sql`(${t.status} = 'lost') = (${t.lossReason} is not null)`),
 ])

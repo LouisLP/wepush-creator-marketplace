@@ -30,7 +30,7 @@ export function createBidRepo(exec: DbExecutor) {
     async recordOutcomes(outcomes: readonly BidOutcome[]) {
       for (const o of outcomes) {
         const updated = await exec.update(bids)
-          .set({ status: o.status, score: o.score, rank: o.rank, lossReason: o.lossReason, scoreFactors: o.factors })
+          .set({ status: o.status, score: o.score, rank: o.rank, lossReason: o.lossReason, remainingBudgetCents: o.remainingBudgetCents, scoreFactors: o.factors })
           .where(and(eq(bids.id, o.bidId), eq(bids.status, 'pending')))
           .returning({ id: bids.id })
         if (updated.length !== 1)
