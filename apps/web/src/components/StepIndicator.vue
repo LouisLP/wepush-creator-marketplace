@@ -23,7 +23,8 @@ const currentIndex = computed(() => STEPS.findIndex(s => s.key === props.current
       :class="{ done: i < currentIndex, now: i === currentIndex }"
       :aria-current="i === currentIndex ? 'step' : undefined"
     >
-      {{ step.label }}
+      <span class="dot" aria-hidden="true" />
+      <span :class="{ 'visually-hidden': i !== currentIndex }">{{ step.label }}</span>
     </li>
   </ol>
 </template>
@@ -31,34 +32,38 @@ const currentIndex = computed(() => STEPS.findIndex(s => s.key === props.current
 <style scoped>
 .steps {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-xs);
   padding: 0;
   list-style: none;
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  counter-reset: step;
 }
 
 li {
-  padding: var(--space-2xs) var(--space-sm);
-  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
   border-radius: var(--radius-full);
-  color: var(--color-text-muted);
-  counter-increment: step;
+  background-color: var(--color-border-default);
 }
 
-li::before {
-  content: counter(step) ". ";
+.done .dot {
+  background-color: var(--color-success-default);
 }
 
-.done {
-  border-color: transparent;
-  background-color: var(--color-success-subtle-bg);
-  color: var(--color-success-subtle-fg);
+.now .dot {
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  background-color: var(--color-accent-default);
 }
 
 .now {
-  border-color: var(--color-accent-default);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
 }

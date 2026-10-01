@@ -91,7 +91,7 @@ describe('advertiser campaign page', () => {
     expect(outcome.textContent).toContain('Spent$130 / $150')
     expect(outcome.textContent).toContain('Winners2 / 4 Bids')
     expect(outcome.textContent).toContain('Est. Impressions20K')
-    expect(outcome.textContent).toContain('Blended CPM$6.50 35%35% under target')
+    expect(outcome.textContent).toContain('Blended CPM$6.50 35% under target')
     expect(wrapper.findAll('.segment').map(s => [s.text(), s.attributes('style')])).toEqual([
       ['#1', 'inline-size: 33.33%;'],
       ['#2', 'inline-size: 53.33%;'],

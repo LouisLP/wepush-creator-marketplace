@@ -7,34 +7,37 @@ import AppBadge from '@/components/kit/AppBadge.vue'
 import AppTooltip from '@/components/kit/AppTooltip.vue'
 import { formatCents, formatVsTarget } from '@/lib/format.ts'
 
-const props = defineProps<{ cpmCents: number, targetCpmCents: number }>()
+const props = defineProps<{
+  cpmCents: number
+  targetCpmCents: number
+  /** Just the percentage; the full comparison moves to a tooltip. */
+  compact?: boolean
+}>()
 
-const pct = computed(() => Math.round((props.cpmCents / props.targetCpmCents - 1) * 100))
-const chip = computed(() => {
-  if (pct.value === 0)
-    return { tone: 'success', icon: IconEqual, text: 'on target' } as const
-  return pct.value < 0
-    ? { tone: 'success', icon: IconArrowDown, text: `${-pct.value}%` } as const
-    : { tone: 'warning', icon: IconArrowUp, text: `${pct.value}%` } as const
-})
+const icon = computed(() => props.cpmCents < props.targetCpmCents ? IconArrowDown : props.cpmCents > props.targetCpmCents ? IconArrowUp : IconEqual)
+const tone = computed(() => props.cpmCents > props.targetCpmCents ? 'warning' : 'success')
+const pct = computed(() => Math.abs(Math.round((props.cpmCents / props.targetCpmCents - 1) * 100)))
 const detail = computed(() => `Effective CPM ${formatCents(props.cpmCents)} vs Target ${formatCents(props.targetCpmCents)}`)
 </script>
 
 <template>
-  <AppTooltip :content="detail">
-    <AppBadge :tone="chip.tone" :icon="chip.icon" tabindex="0" class="chip">
-      <span aria-hidden="true">{{ chip.text }}</span>
+  <AppTooltip v-if="compact" :content="detail">
+    <AppBadge class="vs-target" :tone="tone" :icon="icon" tabindex="0">
+      <span aria-hidden="true">{{ pct ? `${pct}%` : 'on target' }}</span>
       <span class="visually-hidden">{{ formatVsTarget(cpmCents, targetCpmCents) }}</span>
     </AppBadge>
   </AppTooltip>
+  <AppBadge v-else class="vs-target" :tone="tone" :icon="icon">
+    {{ formatVsTarget(cpmCents, targetCpmCents) }}
+  </AppBadge>
 </template>
 
 <style scoped>
-.chip {
+.vs-target {
   font-variant-numeric: tabular-nums;
 }
 
-.chip:focus-visible {
+.vs-target:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

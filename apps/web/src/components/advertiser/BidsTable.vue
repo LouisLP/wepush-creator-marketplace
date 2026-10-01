@@ -56,7 +56,7 @@ const toggle = (id: string) => expanded.value = expanded.value === id ? undefine
             {{ formatCentsShort(b.feeCents) }}
           </td>
           <td>
-            <CpmVsTargetBadge :cpm-cents="b.snapshot.effectiveCpmCents" :target-cpm-cents="targetCpmCents" />
+            <CpmVsTargetBadge :cpm-cents="b.snapshot.effectiveCpmCents" :target-cpm-cents="targetCpmCents" compact />
           </td>
           <td class="num">
             {{ b.score }}
