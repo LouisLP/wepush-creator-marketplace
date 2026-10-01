@@ -20,11 +20,11 @@ const model = defineModel<T>()
       </SelectIcon>
     </SelectTrigger>
     <SelectPortal>
-      <SelectContent class="content" position="popper" :side-offset="4">
-        <SelectViewport class="viewport">
-          <SelectItem v-for="o in options" :key="o.value" :value="o.value" class="item">
+      <SelectContent class="app-select-content" position="popper" :side-offset="4">
+        <SelectViewport class="app-select-viewport">
+          <SelectItem v-for="o in options" :key="o.value" :value="o.value" class="app-select-item">
             <SelectItemText>{{ o.label }}</SelectItemText>
-            <SelectItemIndicator class="check">
+            <SelectItemIndicator class="app-select-check">
               <IconCheck aria-hidden="true" />
             </SelectItemIndicator>
           </SelectItem>
@@ -56,9 +56,12 @@ const model = defineModel<T>()
   flex: none;
   color: var(--color-text-muted);
 }
+</style>
 
+<!-- Unscoped: SelectContent swaps its root, so scoped attrs don't reliably reach the teleported popup -->
+<style>
 /* Above dialogs: selects open inside the create dialogs */
-.content {
+.app-select-content {
   z-index: var(--z-toast);
   inline-size: var(--reka-select-trigger-width);
   max-block-size: var(--reka-select-content-available-height);
@@ -69,11 +72,11 @@ const model = defineModel<T>()
   box-shadow: var(--shadow-md);
 }
 
-.viewport {
+.app-select-viewport {
   padding: var(--space-2xs);
 }
 
-.item {
+.app-select-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -84,27 +87,27 @@ const model = defineModel<T>()
   user-select: none;
 }
 
-.item[data-highlighted] {
+.app-select-item[data-highlighted] {
   outline: none;
   background-color: var(--color-bg-surface-hover);
 }
 
-.item[data-state='checked'] {
+.app-select-item[data-state='checked'] {
   font-weight: var(--font-weight-semibold);
 }
 
-.check {
+.app-select-check {
   display: grid;
   color: var(--color-accent-subtle-fg);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .content[data-state='open'] {
-    animation: fade-in var(--duration-fast) var(--ease-out);
+  .app-select-content[data-state='open'] {
+    animation: app-select-fade-in var(--duration-fast) var(--ease-out);
   }
 }
 
-@keyframes fade-in {
+@keyframes app-select-fade-in {
   from {
     opacity: 0;
     translate: 0 -2px;
