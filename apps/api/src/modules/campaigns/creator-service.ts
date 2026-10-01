@@ -34,17 +34,17 @@ export function createCreatorCampaignService({ repos, clock }: Pick<AppDeps, 're
     },
 
     async getForReview(creatorId: CreatorId, campaignId: CampaignId) {
-      const [profile, campaign, hasBid] = await Promise.all([
+      const [profile, campaign, bid] = await Promise.all([
         profileOf(creatorId),
         repos.campaigns.getWithAdvertiser(campaignId),
-        repos.bids.exists(campaignId, creatorId),
+        repos.bids.findOwn(campaignId, creatorId),
       ])
-      if (!campaign || !canReviewCampaign(profile, campaign, hasBid, clock.now()))
+      if (!campaign || !canReviewCampaign(profile, campaign, !!bid, clock.now()))
         throw new AppError('not_found', 'Campaign not found')
       return {
         ...assess(profile, campaign),
         requirementChecks: checkRequirements(profile, campaign.terms.requirements),
-        hasBid,
+        bid: bid ?? null,
       }
     },
   }

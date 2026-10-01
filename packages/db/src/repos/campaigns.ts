@@ -60,6 +60,15 @@ export function createCampaignRepo(exec: DbExecutor) {
       return row && toCampaignWithAdvertiser(row)
     },
 
+    /**
+     * Share-locks the campaign so Closing (which claims FOR UPDATE SKIP LOCKED) can't run
+     * while a Bid is placed on it; waits out a Closing already underway. Call inside a transaction.
+     */
+    async lockForBidding(id: CampaignId) {
+      const [row] = await exec.select().from(campaigns).where(eq(campaigns.id, id)).for('share')
+      return row && toCampaign(row)
+    },
+
     /** Open, pre-deadline campaigns on `platform` the creator hasn't bid on; Matching decides the rest. */
     async listMatchCandidates(input: { creatorId: CreatorId, platform: Platform, now: Date }) {
       const rows = await withAdvertiser().where(and(

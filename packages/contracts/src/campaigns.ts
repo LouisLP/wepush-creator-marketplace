@@ -1,6 +1,7 @@
 import type { RelevanceFactorKey } from '@wepush/domain'
 import { RELEVANCE_WEIGHTS } from '@wepush/domain'
 import { z } from 'zod'
+import { CreatorBidSchema } from './bids.ts'
 import { defineEndpoint } from './endpoint.ts'
 import { RequirementCheckSchema } from './errors.ts'
 import { CampaignStatusSchema, CategorySchema, CentsSchema, EngagementRateSchema, IdSchema, IsoDateTimeSchema, listOf, PlatformSchema } from './primitives.ts'
@@ -80,7 +81,8 @@ export const CreatorCampaignSchema = z.object({
   requirementChecks: z.array(RequirementCheckSchema),
   relevance: RelevanceSchema,
   feeQuote: FeeQuoteSchema,
-  hasBid: z.boolean(),
+  /** Only ever the acting Creator's own Bid; other Bids and the Bid count are never exposed. */
+  bid: CreatorBidSchema.nullable(),
 })
 export type CreatorCampaign = z.infer<typeof CreatorCampaignSchema>
 

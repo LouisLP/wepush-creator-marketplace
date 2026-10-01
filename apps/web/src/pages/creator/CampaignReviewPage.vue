@@ -1,18 +1,55 @@
 <script setup lang="ts">
+import type { CreatorBid } from '@wepush/contracts'
+import type { Step } from '@/components/StepIndicator.vue'
 import { getCreatorCampaign } from '@wepush/contracts'
-import { computed, watch } from 'vue'
+import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { call } from '@/api'
+import BidComposer from '@/components/BidComposer.vue'
+import BidStatus from '@/components/BidStatus.vue'
 import RelevanceFactors from '@/components/RelevanceFactors.vue'
 import RequirementChecks from '@/components/RequirementChecks.vue'
 import StepIndicator from '@/components/StepIndicator.vue'
 import { useRequest } from '@/composables/useRequest.ts'
-import { formatCents, formatCount, formatDateTime, formatPlatform, formatTimeLeft } from '@/lib/format.ts'
+import { formatCents, formatDateTime, formatPlatform, formatTimeLeft } from '@/lib/format.ts'
+import { useRefreshRail } from './refresh.ts'
 
 const props = defineProps<{ id: string }>()
 
+const OUTCOME_POLL_MS = 5_000
+
+const refreshRail = useRefreshRail()
+
 const review = useRequest(() => call(getCreatorCampaign, { params: { id: props.id } }))
-watch(() => props.id, () => void review.reload())
+const confirming = shallowRef(false)
+watch(() => props.id, () => {
+  confirming.value = false
+  void review.reload()
+})
 const campaign = computed(() => review.data.value)
+
+const step = computed<Step>(() => {
+  const bid = campaign.value?.bid
+  if (bid)
+    return bid.status === 'pending' ? 'track' : 'outcome'
+  return confirming.value ? 'bid' : 'review'
+})
+
+function onPlaced(bid: CreatorBid) {
+  review.data.value = { ...campaign.value!, bid }
+  confirming.value = false
+  refreshRail()
+}
+
+// The worker closes due Campaigns on its own poll; pick up the outcome once the deadline passes.
+const poll = setInterval(async () => {
+  const c = campaign.value
+  if (c?.bid?.status !== 'pending' || Date.now() < Date.parse(c.biddingDeadline) || review.loading.value)
+    return
+  await review.reload()
+  if (review.data.value?.bid?.status !== 'pending')
+    refreshRail()
+}, OUTCOME_POLL_MS)
+onUnmounted(() => clearInterval(poll))
 </script>
 
 <template>
@@ -28,8 +65,15 @@ const campaign = computed(() => review.data.value)
         {{ campaign.advertiserName }} · {{ formatPlatform(campaign.requirements.platform) }} ·
         {{ campaign.status === 'open' ? formatTimeLeft(campaign.biddingDeadline) : 'closed' }}
       </p>
-      <StepIndicator :current="campaign.hasBid ? 'track' : 'review'" />
+      <StepIndicator :current="step" />
     </header>
+
+    <section v-if="campaign.bid" class="card" aria-labelledby="bid-heading">
+      <h2 id="bid-heading">
+        Your Bid
+      </h2>
+      <BidStatus :bid="campaign.bid" :campaign="campaign" />
+    </section>
 
     <section aria-labelledby="brief-heading">
       <h2 id="brief-heading" class="visually-hidden">
@@ -58,20 +102,6 @@ const campaign = computed(() => review.data.value)
       <RequirementChecks :checks="campaign.requirementChecks" />
     </section>
 
-    <section class="card" aria-labelledby="quote-heading">
-      <h2 id="quote-heading">
-        Your Fee Quote
-      </h2>
-      <dl class="terms">
-        <div><dt>Suggested Fee</dt><dd>{{ formatCents(campaign.feeQuote.suggestedFeeCents) }}</dd></div>
-        <div>
-          <dt>Fee Range</dt>
-          <dd>{{ formatCents(campaign.feeQuote.minFeeCents) }} – {{ formatCents(campaign.feeQuote.maxFeeCents) }}</dd>
-        </div>
-        <div><dt>Estimated Impressions</dt><dd>{{ formatCount(campaign.feeQuote.estimatedImpressions) }}</dd></div>
-      </dl>
-    </section>
-
     <section class="card" aria-labelledby="relevance-heading">
       <h2 id="relevance-heading" class="visually-hidden">
         Relevance
@@ -79,15 +109,12 @@ const campaign = computed(() => review.data.value)
       <RelevanceFactors :relevance="campaign.relevance" />
     </section>
 
-    <footer v-if="campaign.hasBid" class="muted">
-      You’ve bid on this Campaign.
-    </footer>
-    <footer v-else class="cta">
-      <button type="button" class="btn" disabled aria-describedby="bid-soon">
-        Bid on this Campaign
-      </button>
-      <small id="bid-soon" class="muted">Bidding opens soon.</small>
-    </footer>
+    <section v-if="!campaign.bid" class="card" aria-labelledby="place-heading">
+      <h2 id="place-heading">
+        Place your Bid
+      </h2>
+      <BidComposer :key="campaign.id" :campaign="campaign" @placed="onPlaced" @confirming="confirming = $event" />
+    </section>
   </article>
 </template>
 
@@ -131,12 +158,5 @@ dt {
 
 dd {
   font-weight: var(--font-weight-semibold);
-}
-
-.cta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  align-items: center;
 }
 </style>

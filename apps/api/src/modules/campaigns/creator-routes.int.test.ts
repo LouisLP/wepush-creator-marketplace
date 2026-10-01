@@ -122,7 +122,7 @@ describe('creator campaign review', () => {
       ],
       relevance: { value: 40, factors: expect.any(Array) },
       feeQuote: { estimatedImpressions: 7_500, suggestedFeeCents: 2_250, minFeeCents: 1_000, maxFeeCents: 6_750 },
-      hasBid: false,
+      bid: null,
     })
   })
 
@@ -153,7 +153,7 @@ describe('creator campaign review', () => {
     const res = await get(`/api/creator/campaigns/${campaign.id}`)
 
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ status: 'closed', hasBid: true })
+    expect(res.json()).toMatchObject({ status: 'closed', bid: { status: 'pending' } })
     expect(res.json().requirementChecks).toContainEqual({ requirement: 'minFollowers', passed: false, actual: 50_000, required: 60_000 })
   })
 
