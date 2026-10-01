@@ -18,6 +18,7 @@ const router = createRouter({
       meta: { role: 'advertiser' },
       children: [
         { path: '', name: 'advertiser-home', component: () => import('@/pages/advertiser/AdvertiserHomePage.vue') },
+        { path: 'prototype', component: () => import('@/pages/prototype-screens/AdvertiserScreensPrototype.vue') },
       ],
     },
     {
@@ -26,6 +27,7 @@ const router = createRouter({
       meta: { role: 'creator' },
       children: [
         { path: '', name: 'creator-home', component: () => import('@/pages/creator/CreatorHomePage.vue') },
+        { path: 'prototype', component: () => import('@/pages/prototype-screens/CreatorScreensPrototype.vue') },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
