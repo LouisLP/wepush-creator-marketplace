@@ -17,7 +17,15 @@ const router = createRouter({
       component: () => import('@/components/AppShell.vue'),
       meta: { role: 'advertiser' },
       children: [
-        { path: '', name: 'advertiser-home', component: () => import('@/pages/advertiser/AdvertiserHomePage.vue') },
+        {
+          path: '',
+          component: () => import('@/pages/advertiser/AdvertiserCampaignsLayout.vue'),
+          children: [
+            { path: '', name: 'advertiser-home', component: () => import('@/pages/advertiser/AdvertiserHomePage.vue') },
+            { path: 'campaigns/new', name: 'advertiser-campaign-new', component: () => import('@/pages/advertiser/NewCampaignPage.vue') },
+            { path: 'campaigns/:id', name: 'advertiser-campaign', component: () => import('@/pages/advertiser/AdvertiserCampaignPage.vue'), props: true },
+          ],
+        },
       ],
     },
     {

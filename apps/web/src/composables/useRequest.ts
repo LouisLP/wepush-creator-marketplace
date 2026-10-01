@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import { shallowRef } from 'vue'
-import { ApiError, messageFor } from '@/api'
+import { errorMessage } from '@/api'
 
 /** Runs a request immediately and exposes its state; call `reload()` to refetch. */
 export function useRequest<T>(fetcher: () => Promise<T>) {
@@ -15,7 +15,7 @@ export function useRequest<T>(fetcher: () => Promise<T>) {
       data.value = await fetcher()
     }
     catch (e) {
-      error.value = e instanceof ApiError ? messageFor(e) : 'Something went wrong.'
+      error.value = errorMessage(e)
     }
     finally {
       loading.value = false

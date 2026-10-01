@@ -52,7 +52,7 @@ export function isWithinFeeRange(feeCents: Cents, { minCents, maxCents }: FeeRan
   return feeCents >= minCents && feeCents <= maxCents
 }
 
-export function feeQuote(profile: ImpressionInputs, terms: CampaignTerms): FeeQuote {
+export function feeQuote(profile: ImpressionInputs, terms: Pick<CampaignTerms, 'targetCpmCents' | 'budgetCents'>): FeeQuote {
   const estimatedImpressions = estimateImpressions(profile)
   const parity = parityFeeCents(estimatedImpressions, terms.targetCpmCents)
   const { minCents, maxCents } = feeRangeFromParity(parity, terms.budgetCents)

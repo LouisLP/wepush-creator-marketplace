@@ -1,6 +1,7 @@
 import type { AdvertiserId, CampaignId, CampaignTerms, Cents, CreatorId, Platform } from '@wepush/domain'
 import type { DbExecutor } from '../client.ts'
-import { and, asc, desc, eq, gt, lte, notExists, notInArray } from 'drizzle-orm'
+import { and, asc, count, desc, eq, getTableColumns, gt, lte, notExists, notInArray } from 'drizzle-orm'
+import { translatingDbErrors } from '../errors.ts'
 import { advertisers, bids, campaigns } from '../schema/index.ts'
 
 type Row = typeof campaigns.$inferSelect
@@ -39,6 +40,12 @@ function toCampaignWithAdvertiser(row: { campaign: Row, advertiserName: string }
 }
 export type CampaignWithAdvertiser = ReturnType<typeof toCampaignWithAdvertiser>
 
+export interface NewCampaign extends Omit<CampaignTerms, 'id'> {
+  advertiserId: AdvertiserId
+  title: string
+  brief: string
+}
+
 export function createCampaignRepo(exec: DbExecutor) {
   const withAdvertiser = () => exec.select({ campaign: campaigns, advertiserName: advertisers.name })
     .from(campaigns)
@@ -46,8 +53,26 @@ export function createCampaignRepo(exec: DbExecutor) {
 
   return {
     async listByAdvertiser(advertiserId: AdvertiserId) {
-      const rows = await exec.select().from(campaigns).where(eq(campaigns.advertiserId, advertiserId)).orderBy(desc(campaigns.createdAt), desc(campaigns.id))
-      return rows.map(toCampaign)
+      const rows = await exec.select({ ...getTableColumns(campaigns), bidCount: count(bids.id) })
+        .from(campaigns)
+        .leftJoin(bids, eq(bids.campaignId, campaigns.id))
+        .where(eq(campaigns.advertiserId, advertiserId))
+        .groupBy(campaigns.id)
+        .orderBy(desc(campaigns.createdAt), desc(campaigns.id))
+      return rows.map(({ bidCount, ...row }) => ({ ...toCampaign(row), bidCount }))
+    },
+
+    async create({ advertiserId, title, brief, requirements, budgetCents, targetCpmCents, biddingDeadline }: NewCampaign) {
+      const [row] = await translatingDbErrors(() => exec.insert(campaigns).values({
+        advertiserId,
+        title,
+        brief,
+        ...requirements,
+        budgetCents,
+        targetCpmCents,
+        biddingDeadline,
+      }).returning())
+      return toCampaign(row!)
     },
 
     async getById(id: CampaignId) {
