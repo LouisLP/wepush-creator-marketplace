@@ -98,6 +98,10 @@ _Avoid_: Average ER, benchmark ER
 The cost per thousand impressions an Advertiser aims to pay on a Campaign.
 _Avoid_: Max CPM, goal CPM
 
+**CPM Ceiling**:
+The highest Effective CPM a Bid may have on a Campaign: a fixed multiple of its Target CPM. Bids above it are not Eligible.
+_Avoid_: Max CPM, CPM cap, price limit
+
 ### Bidding
 
 **Bid**:
@@ -120,16 +124,24 @@ _Avoid_: Accepted, awarded, selected
 A Bid not selected at Closing, always with a Loss Reason.
 _Avoid_: Rejected, declined, failed
 
+**Eligible Bid**:
+A Bid whose Bid Snapshot still meets the Campaign's Requirements and whose Effective CPM is within the CPM Ceiling; only Eligible Bids compete for the Budget at Closing.
+_Avoid_: Valid bid, qualifying bid
+
 **Loss Reason**:
-The explanation given to a Creator for why their Bid was Lost.
+The explanation given to a Creator for why their Bid was Lost: its Bid Snapshot did not meet the Requirements, its Effective CPM was above the CPM Ceiling, or its Fee did not fit the Remaining Budget.
 _Avoid_: Rejection reason, status reason
 
+**Remaining Budget**:
+The part of the Budget not yet taken by Winners when Closing reaches a given Eligible Bid; the Bid Wins only if its Fee fits within it.
+_Avoid_: Leftover, headroom, balance
+
 **Score**:
-The number Closing assigns each Bid to say how well it serves the Campaign's goals; Bids are considered best Score first.
+The number from 0 to 100 that Closing assigns each Bid to say how well it serves the Campaign's goals, mostly from its Effective CPM against the Target CPM and partly from its engagement rate against the Baseline Engagement Rate; each part's contribution is recorded so the Score can be explained.
 _Avoid_: Rating, value, quality
 
 **Rank**:
-A Bid's position among its Campaign's Bids by Score at Closing, shown to both sides.
+A Bid's position in the order Closing considers its Campaign's Bids — Eligible Bids first, then best Score — shown to both sides.
 _Avoid_: Position, place, order
 
 **Spent**:
